@@ -70,7 +70,7 @@ public class GlobalSetting {
         //第一个区块的高度
         public static final long FIRST_BLOCK_HEIGHT = 1;
         //第一个区块的PREVIOUS_HASH
-        public static final String FIRST_BLOCK_PREVIOUS_HASH = "xingkaichun";
+        public static final String FIRST_BLOCK_PREVIOUS_HASH = "0000000000000000000000000000000000000000000000000000000000000000";
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.xingkaichun.helloworldblockchain.core.tools;
 
 import com.google.common.base.Joiner;
+import com.google.common.primitives.Bytes;
 import com.xingkaichun.helloworldblockchain.core.model.script.Script;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptExecuteResult;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
@@ -8,6 +9,7 @@ import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionIn
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionType;
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
+import com.xingkaichun.helloworldblockchain.core.utils.ByteUtil;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.crypto.HexUtil;
 import com.xingkaichun.helloworldblockchain.crypto.SHA256Util;
@@ -15,7 +17,6 @@ import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionDTO
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionInputDTO;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionOutputDTO;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
-import com.xingkaichun.helloworldblockchain.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,14 +176,14 @@ public class TransactionTool {
      * 计算交易哈希
      */
     private static String calculateTransactionHash(long currentTimeMillis,List<String> inputHashList,List<String> outputHashList){
-        String data = "[" + currentTimeMillis + "]";
-        if(inputHashList != null && inputHashList.size()!=0){
-            data += "[" + Joiner.on(" ").join(inputHashList) + "]";
-        }
-        if(outputHashList != null && outputHashList.size()!=0){
-            data += "[" + Joiner.on(" ").join(outputHashList) + "]";
-        }
-        byte[] sha256Digest = SHA256Util.digest(ByteUtil.stringToBytes(data));
+        byte[] bytesCurrentTimeMillis = ByteUtil.longToBytes8(currentTimeMillis);
+        byte[] bytesInputHashList = HexUtil.hexStringToBytes(Joiner.on("").join(inputHashList));
+        byte[] bytesOutputHashList = HexUtil.hexStringToBytes(Joiner.on("").join(outputHashList));
+
+        byte[] data = Bytes.concat(ByteUtil.concatBytesLength(bytesCurrentTimeMillis),
+                                    ByteUtil.concatBytesLength(bytesInputHashList),
+                                    ByteUtil.concatBytesLength(bytesOutputHashList));
+        byte[] sha256Digest = SHA256Util.digest(data);
         return HexUtil.bytesToHexString(sha256Digest);
     }
 
@@ -204,11 +205,16 @@ public class TransactionTool {
      * 计算交易输出哈希
      */
     private static String calculateTransactionOutputHash(long currentTimeMillis, long transactionOutputSequence, long value, List<String> scriptLock) {
-        String forHash = "[" + currentTimeMillis + "]";
-        forHash += "[" + transactionOutputSequence + "]";
-        forHash += "[" + value + "]";
-        forHash += "[" + Joiner.on(" ").join(scriptLock) + "]";
-        byte[] sha256Digest = SHA256Util.digest(ByteUtil.stringToBytes(forHash));
+        byte[] bytesCurrentTimeMillis = ByteUtil.longToBytes8(currentTimeMillis);
+        byte[] bytesTransactionOutputSequence = ByteUtil.longToBytes8(transactionOutputSequence);
+        byte[] bytesValue = ByteUtil.longToBytes8(value);
+        byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
+
+        byte[] data = Bytes.concat(ByteUtil.concatBytesLength(bytesCurrentTimeMillis),
+                                    ByteUtil.concatBytesLength(bytesTransactionOutputSequence),
+                                    ByteUtil.concatBytesLength(bytesValue),
+                                    ByteUtil.concatBytesLength(bytesScriptLock));
+        byte[] sha256Digest = SHA256Util.digest(data);
         return HexUtil.bytesToHexString(sha256Digest);
     }
 

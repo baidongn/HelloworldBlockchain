@@ -1,17 +1,18 @@
 package com.xingkaichun.helloworldblockchain.core.tools;
 
+import com.google.common.primitives.Bytes;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionInput;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionType;
+import com.xingkaichun.helloworldblockchain.core.utils.ByteUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.crypto.HexUtil;
 import com.xingkaichun.helloworldblockchain.crypto.MerkleTreeUtil;
 import com.xingkaichun.helloworldblockchain.crypto.SHA256Util;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
-import com.xingkaichun.helloworldblockchain.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +35,16 @@ public class BlockTool {
      * 计算区块的Hash值
      */
     public static String calculateBlockHash(Block block) {
-        String input = block.getTimestamp()+block.getPreviousBlockHash()+block.getMerkleTreeRoot()+block.getNonce();
-        byte[] sha256Digest = SHA256Util.digest(ByteUtil.stringToBytes(input));
+        byte[] bytesTimestamp = ByteUtil.longToBytes8(block.getTimestamp());
+        byte[] bytesPreviousBlockHash = HexUtil.hexStringToBytes(block.getPreviousBlockHash());
+        byte[] bytesMerkleTreeRoot = HexUtil.hexStringToBytes(block.getMerkleTreeRoot());
+        byte[] bytesNonce = ByteUtil.longToBytes8(block.getNonce());
+
+        byte[] data = Bytes.concat(ByteUtil.concatBytesLength(bytesTimestamp),
+                                    ByteUtil.concatBytesLength(bytesPreviousBlockHash),
+                                    ByteUtil.concatBytesLength(bytesMerkleTreeRoot),
+                                    ByteUtil.concatBytesLength(bytesNonce));
+        byte[] sha256Digest = SHA256Util.digest(data);
         return HexUtil.bytesToHexString(sha256Digest);
     }
 
@@ -55,7 +64,8 @@ public class BlockTool {
         List<byte[]> hashList = new ArrayList<>();
         if(transactions != null){
             for(Transaction transaction : transactions) {
-                hashList.add(SHA256Util.digest(ByteUtil.stringToBytes(transaction.getTransactionHash())));
+                byte[] bytesTransactionHash = HexUtil.hexStringToBytes(transaction.getTransactionHash());
+                hashList.add(bytesTransactionHash);
             }
         }
         return HexUtil.bytesToHexString(MerkleTreeUtil.calculateMerkleRootByHash(hashList));

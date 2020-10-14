@@ -19,8 +19,10 @@ public class HexUtil {
 
     /**
      * 16进制字符串转byte数组(十六进制字符串小写，仅包含字符0123456789abcdef)
+     * @param hexString 长度必须是2的整数倍
      */
     public static byte[] hexStringToBytes(String hexString) {
+        assert hexString.length()%2 == 0;
         return Hex.decode(hexString);
     }
 }

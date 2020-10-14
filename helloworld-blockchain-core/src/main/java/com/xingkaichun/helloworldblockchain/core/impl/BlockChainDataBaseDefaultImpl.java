@@ -14,11 +14,11 @@ import com.xingkaichun.helloworldblockchain.core.tools.BlockChainDataBaseKeyTool
 import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
 import com.xingkaichun.helloworldblockchain.core.tools.TextSizeRestrictionTool;
 import com.xingkaichun.helloworldblockchain.core.tools.TransactionTool;
+import com.xingkaichun.helloworldblockchain.core.utils.ByteUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.EncodeDecodeUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LevelDBUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
-import com.xingkaichun.helloworldblockchain.util.ByteUtil;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.WriteBatch;
@@ -439,7 +439,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
     public List<TransactionOutput> queryTransactionOutputListByAddress(String address,long from,long size) {
         List<TransactionOutput> transactionOutputList = new ArrayList<>();
         DBIterator iterator = blockChainDB.iterator();
-        byte[] addressToTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToTransactionOuputListKey(address);
+        byte[] addressToTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToTransactionOutputListKey(address);
         int currentFrom = 0;
         int currentSize = 0;
         for (iterator.seek(addressToTransactionOutputListKey); iterator.hasNext(); iterator.next()) {
@@ -681,7 +681,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
             List<TransactionOutput> outputs = transaction.getOutputs();
             if(outputs != null){
                 for (TransactionOutput transactionOutput:outputs){
-                    byte[] addressToTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToTransactionOuputListKey(transactionOutput);
+                    byte[] addressToTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToTransactionOutputListKey(transactionOutput);
                     byte[] addressToUnspendTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToUnspendTransactionOutputListKey(transactionOutput);
                     if(blockChainActionEnum == BlockChainActionEnum.ADD_BLOCK){
                         byte[] byteTransactionOutput = EncodeDecodeUtil.encode(transactionOutput);

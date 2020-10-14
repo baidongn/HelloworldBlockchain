@@ -1,6 +1,5 @@
 package com.xingkaichun.helloworldblockchain.core.utils;
 
-import com.xingkaichun.helloworldblockchain.util.ByteUtil;
 import org.iq80.leveldb.*;
 import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.slf4j.Logger;
