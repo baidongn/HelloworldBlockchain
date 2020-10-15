@@ -8,6 +8,7 @@ import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlockDTO;
 import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
+import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.ThreadUtil;
 import com.xingkaichun.helloworldblockchain.netcore.dto.common.ServiceResult;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationDto;
@@ -82,11 +83,11 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
             }
             String blockHash = queryBlockHashByBlockHeightResponseServiceResult.getResult().getBlockHash();
             //远程节点的高度没有本地大
-            if(blockHash == null || "".equals(blockHash)){
+            if(StringUtil.isEmpty(blockHash)){
                 return;
             } else {
                 //没有分叉
-                if(tailBlock.getHash().equals(blockHash)){
+                if(StringUtil.isEquals(tailBlock.getHash(),blockHash)){
                     fork = false;
                 } else {
                     //有分叉
@@ -118,7 +119,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
                 }
                 String blockHash = queryBlockHashByBlockHeightResponseServiceResult.getResult().getBlockHash();
                 Block localBlock = blockChainDataBase.queryBlockByBlockHeight(tempBlockHeight);
-                if(localBlock.getHash().equals(blockHash)){
+                if(StringUtil.isEquals(blockHash,localBlock.getHash())){
                     break;
                 }
                 synchronizerDataBase.addBlockDTO(nodeId,blockDTO);
@@ -201,7 +202,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
             return false;
         }
         String blockChainId = pingResponseServiceResult.getResult().getBlockChainId();
-        return currentBlockChainId.equals(blockChainId);
+        return StringUtil.isEquals(currentBlockChainId,blockChainId);
     }
 
     /**

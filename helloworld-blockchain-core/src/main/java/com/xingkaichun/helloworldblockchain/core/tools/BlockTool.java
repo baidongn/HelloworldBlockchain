@@ -53,7 +53,7 @@ public class BlockTool {
      */
     public static boolean isBlockWriteHashRight(Block block){
         String targetHash = calculateBlockHash(block);
-        return targetHash.equals(block.getHash());
+        return StringUtil.isEquals(targetHash,block.getHash());
     }
 
     /**
@@ -75,7 +75,7 @@ public class BlockTool {
      */
     public static boolean isBlockWriteMerkleTreeRootRight(Block block){
         String targetMerkleRoot = calculateBlockMerkleTreeRoot(block);
-        return targetMerkleRoot.equals(block.getMerkleTreeRoot());
+        return StringUtil.isEquals(targetMerkleRoot,block.getMerkleTreeRoot());
     }
 
     /**
@@ -277,9 +277,9 @@ public class BlockTool {
      */
     public static boolean isBlockPreviousBlockHashLegal(Block previousBlock, Block currentBlock) {
         if(previousBlock == null){
-            return GlobalSetting.GenesisBlockConstant.FIRST_BLOCK_PREVIOUS_HASH.equals(currentBlock.getPreviousBlockHash());
+            return StringUtil.isEquals(GlobalSetting.GenesisBlockConstant.FIRST_BLOCK_PREVIOUS_HASH,currentBlock.getPreviousBlockHash());
         } else {
-            return previousBlock.getHash().equals(currentBlock.getPreviousBlockHash());
+            return StringUtil.isEquals(previousBlock.getHash(),currentBlock.getPreviousBlockHash());
         }
     }
 

@@ -2,6 +2,7 @@ package com.xingkaichun.helloworldblockchain.netcore.service;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
 import com.xingkaichun.helloworldblockchain.netcore.dao.ConfigurationDao;
@@ -36,7 +37,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
         //默认值
         for (ConfigurationEnum configurationEnum:ConfigurationEnum.values()){
-            if(configurationEnum.name().equals(confKey)){
+            if(StringUtil.isEquals(configurationEnum.name(),confKey)){
                 configurationDto.setConfValue(configurationEnum.getDefaultConfValue());
                 return configurationDto;
             }
@@ -58,7 +59,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         //检查是否存在配置
         boolean exist = false;
         for (ConfigurationEnum configurationEnum: ConfigurationEnum.values()){
-            if(configurationEnum.name().equals(confKey)){
+            if(StringUtil.isEquals(configurationEnum.name(),confKey)){
                 exist = true;
             }
         }
