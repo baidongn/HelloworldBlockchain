@@ -2,6 +2,8 @@ package com.xingkaichun.helloworldblockchain.core.utils;
 
 import com.google.common.primitives.Bytes;
 
+import java.util.List;
+
 /**
  * Bytes工具类
  *
@@ -44,5 +46,13 @@ public class ByteUtil {
      */
     public static byte[] concatLengthBytes(byte[] value) {
         return Bytes.concat(intToBytes4(value.length),value);
+    }
+
+    public static byte[] concatLengthBytes(List<byte[]> values) {
+        byte[] concatBytes = intToBytes4(values.size());
+        for(byte[] value:values){
+            concatBytes = Bytes.concat(concatBytes,concatLengthBytes(value));
+        }
+        return concatBytes;
     }
 }

@@ -16,7 +16,7 @@ import java.util.List;
 public class ScriptTool {
 
     /**
-     * 计算交易输出哈希
+     * 字节型脚本
      */
     public static byte[] bytesScript(List<String> script) {
         byte[] bytesScript = new byte[0];

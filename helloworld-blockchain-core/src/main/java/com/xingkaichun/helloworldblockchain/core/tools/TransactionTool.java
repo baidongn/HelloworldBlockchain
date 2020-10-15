@@ -1,6 +1,5 @@
 package com.xingkaichun.helloworldblockchain.core.tools;
 
-import com.google.common.base.Joiner;
 import com.google.common.primitives.Bytes;
 import com.xingkaichun.helloworldblockchain.core.model.script.Script;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptExecuteResult;
@@ -44,9 +43,8 @@ public class TransactionTool {
     public static long getInputsValue(List<TransactionInput> inputs) {
         long total = 0;
         if(inputs != null){
-            for(TransactionInput i : inputs) {
-                if(i.getUnspendTransactionOutput() == null) continue;
-                total += i.getUnspendTransactionOutput().getValue();
+            for(TransactionInput input : inputs) {
+                total += input.getUnspendTransactionOutput().getValue();
             }
         }
         return total;
@@ -134,57 +132,47 @@ public class TransactionTool {
      * 计算交易哈希
      */
     public static String calculateTransactionHash(Transaction transaction){
-        List<String> inputHashList = new ArrayList<>();
-        List<TransactionInput> inputs = transaction.getInputs();
-        if(inputs != null && inputs.size()!=0){
-            for(TransactionInput transactionInput:inputs){
-                inputHashList.add(transactionInput.getUnspendTransactionOutput().getTransactionOutputHash());
-            }
-        }
-        List<String> outputHashList = new ArrayList<>();
-        List<TransactionOutput> outputs = transaction.getOutputs();
-        if(outputs != null && outputs.size()!=0){
-            for(TransactionOutput transactionOutput:outputs){
-                outputHashList.add(transactionOutput.getTransactionOutputHash());
-            }
-        }
-        return calculateTransactionHash(transaction.getTimestamp(),inputHashList,outputHashList);
+        return calculateTransactionHash(NodeTransportDtoTool.classCast(transaction));
     }
 
     /**
      * 计算交易哈希
      */
     public static String calculateTransactionHash(TransactionDTO transactionDTO){
-        List<String> inputHashList = new ArrayList<>();
+        byte[] bytesTransaction = bytesTransaction(transactionDTO);
+        byte[] sha256Digest = SHA256Util.digest(bytesTransaction);
+        return HexUtil.bytesToHexString(sha256Digest);
+    }
+
+    /**
+     * 字节型脚本
+     */
+    public static byte[] bytesTransaction(TransactionDTO transactionDTO) {
+        long timestamp = transactionDTO.getTimestamp();
+        byte[] bytesTimestamp = ByteUtil.longToBytes8(timestamp);
+
+        List<byte[]> bytesTransactionInputList = new ArrayList<>();
         List<TransactionInputDTO> inputs = transactionDTO.getInputs();
         if(inputs != null && inputs.size()!=0){
             for(TransactionInputDTO transactionInputDTO:inputs){
-                inputHashList.add(transactionInputDTO.getUnspendTransactionOutputHash());
+                byte[] bytesTransactionInput = HexUtil.hexStringToBytes(transactionInputDTO.getUnspendTransactionOutputHash());
+                bytesTransactionInputList.add(bytesTransactionInput);
             }
         }
-        List<String> outputHashList = new ArrayList<>();
+        List<byte[]> bytesTransactionOutputList = new ArrayList<>();
         List<TransactionOutputDTO> outputs = transactionDTO.getOutputs();
         long transactionOutputSequence = 0;
         for(TransactionOutputDTO transactionOutputDTO:outputs){
             transactionOutputSequence++;
-            outputHashList.add(calculateTransactionOutputHash(transactionDTO.getTimestamp(),transactionOutputSequence,transactionOutputDTO));
+            byte[] bytesTransactionOutput = bytesTransactionOutput(transactionDTO.getTimestamp(),transactionOutputSequence,transactionOutputDTO.getValue(),transactionOutputDTO.getScriptLock());
+            bytesTransactionOutputList.add(bytesTransactionOutput);
         }
-        return calculateTransactionHash(transactionDTO.getTimestamp(),inputHashList,outputHashList);
-    }
 
-    /**
-     * 计算交易哈希
-     */
-    private static String calculateTransactionHash(long currentTimeMillis,List<String> inputHashList,List<String> outputHashList){
-        byte[] bytesCurrentTimeMillis = ByteUtil.longToBytes8(currentTimeMillis);
-        byte[] bytesInputHashList = HexUtil.hexStringToBytes(Joiner.on("").join(inputHashList));
-        byte[] bytesOutputHashList = HexUtil.hexStringToBytes(Joiner.on("").join(outputHashList));
 
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesCurrentTimeMillis),
-                                    ByteUtil.concatLengthBytes(bytesInputHashList),
-                                    ByteUtil.concatLengthBytes(bytesOutputHashList));
-        byte[] sha256Digest = SHA256Util.digest(data);
-        return HexUtil.bytesToHexString(sha256Digest);
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTimestamp),
+                ByteUtil.concatLengthBytes(bytesTransactionInputList),
+                ByteUtil.concatLengthBytes(bytesTransactionOutputList));
+        return data;
     }
 
     /**
@@ -205,15 +193,7 @@ public class TransactionTool {
      * 计算交易输出哈希
      */
     private static String calculateTransactionOutputHash(long currentTimeMillis, long transactionOutputSequence, long value, List<String> scriptLock) {
-        byte[] bytesCurrentTimeMillis = ByteUtil.longToBytes8(currentTimeMillis);
-        byte[] bytesTransactionOutputSequence = ByteUtil.longToBytes8(transactionOutputSequence);
-        byte[] bytesValue = ByteUtil.longToBytes8(value);
-        byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
-
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesCurrentTimeMillis),
-                                    ByteUtil.concatLengthBytes(bytesTransactionOutputSequence),
-                                    ByteUtil.concatLengthBytes(bytesValue),
-                                    ByteUtil.concatLengthBytes(bytesScriptLock));
+        byte[] data = bytesTransactionOutput(currentTimeMillis,transactionOutputSequence,value,scriptLock);
         byte[] sha256Digest = SHA256Util.digest(data);
         return HexUtil.bytesToHexString(sha256Digest);
     }
@@ -280,5 +260,21 @@ public class TransactionTool {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 字节型脚本
+     */
+    public static byte[] bytesTransactionOutput(long currentTimeMillis, long transactionOutputSequence, long value, List<String> scriptLock) {
+        byte[] bytesCurrentTimeMillis = ByteUtil.longToBytes8(currentTimeMillis);
+        byte[] bytesTransactionOutputSequence = ByteUtil.longToBytes8(transactionOutputSequence);
+        byte[] bytesValue = ByteUtil.longToBytes8(value);
+        byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
+
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesCurrentTimeMillis),
+                ByteUtil.concatLengthBytes(bytesTransactionOutputSequence),
+                ByteUtil.concatLengthBytes(bytesValue),
+                ByteUtil.concatLengthBytes(bytesScriptLock));
+        return data;
     }
 }
