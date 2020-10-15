@@ -1,6 +1,5 @@
 package com.xingkaichun.helloworldblockchain.setting;
 
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -11,9 +10,6 @@ import java.util.List;
  * @author 邢开春 微信HelloworldBlockchain 邮箱xingkaichun@qq.com
  */
 public class GlobalSetting {
-
-    //全局字符编码
-    public static final Charset GLOBAL_CHARSET = Charset.forName("UTF-8");
 
     //区块链的链ID
     public static final String BLOCK_CHAIN_ID = "0001";

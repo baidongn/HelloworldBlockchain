@@ -1,7 +1,6 @@
 package com.xingkaichun.helloworldblockchain.core.utils;
 
 import com.google.common.primitives.Bytes;
-import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 
 /**
  * Bytes工具类
@@ -43,23 +42,7 @@ public class ByteUtil {
     /**
      * 计算[传入字节数组]的长度，然后将长度转为4个字节的字节数组(大端)，然后将长度字节数组拼接在[传入字节数组]前，然后返回。
      */
-    public static byte[] concatBytesLength(byte[] bytes) {
-        return Bytes.concat(intToBytes4(bytes.length),bytes);
-    }
-
-    public static byte[] stringToBytes(String strValue) {
-        return strValue.getBytes(GlobalSetting.GLOBAL_CHARSET);
-    }
-
-    public static String bytesToString(byte[] bytesValue) {
-        return new String(bytesValue, GlobalSetting.GLOBAL_CHARSET);
-    }
-
-    public static byte[] longToBytes(long longValue) {
-        return stringToBytes(String.valueOf(longValue));
-    }
-
-    public static long bytesToLong(byte[] bytesValue) {
-        return Long.valueOf(bytesToString(bytesValue));
+    public static byte[] concatLengthBytes(byte[] value) {
+        return Bytes.concat(intToBytes4(value.length),value);
     }
 }

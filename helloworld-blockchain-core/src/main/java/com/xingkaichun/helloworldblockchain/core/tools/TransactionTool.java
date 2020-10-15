@@ -180,9 +180,9 @@ public class TransactionTool {
         byte[] bytesInputHashList = HexUtil.hexStringToBytes(Joiner.on("").join(inputHashList));
         byte[] bytesOutputHashList = HexUtil.hexStringToBytes(Joiner.on("").join(outputHashList));
 
-        byte[] data = Bytes.concat(ByteUtil.concatBytesLength(bytesCurrentTimeMillis),
-                                    ByteUtil.concatBytesLength(bytesInputHashList),
-                                    ByteUtil.concatBytesLength(bytesOutputHashList));
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesCurrentTimeMillis),
+                                    ByteUtil.concatLengthBytes(bytesInputHashList),
+                                    ByteUtil.concatLengthBytes(bytesOutputHashList));
         byte[] sha256Digest = SHA256Util.digest(data);
         return HexUtil.bytesToHexString(sha256Digest);
     }
@@ -210,10 +210,10 @@ public class TransactionTool {
         byte[] bytesValue = ByteUtil.longToBytes8(value);
         byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
 
-        byte[] data = Bytes.concat(ByteUtil.concatBytesLength(bytesCurrentTimeMillis),
-                                    ByteUtil.concatBytesLength(bytesTransactionOutputSequence),
-                                    ByteUtil.concatBytesLength(bytesValue),
-                                    ByteUtil.concatBytesLength(bytesScriptLock));
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesCurrentTimeMillis),
+                                    ByteUtil.concatLengthBytes(bytesTransactionOutputSequence),
+                                    ByteUtil.concatLengthBytes(bytesValue),
+                                    ByteUtil.concatLengthBytes(bytesScriptLock));
         byte[] sha256Digest = SHA256Util.digest(data);
         return HexUtil.bytesToHexString(sha256Digest);
     }

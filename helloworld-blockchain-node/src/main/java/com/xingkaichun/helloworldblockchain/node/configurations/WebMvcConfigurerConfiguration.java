@@ -53,8 +53,7 @@ public class WebMvcConfigurerConfiguration implements WebMvcConfigurer {
 
 	private void responseResult(HttpServletResponse httpServletResponse, Exception exception) {
 		try {
-			httpServletResponse.setCharacterEncoding("UTF-8");
-			httpServletResponse.setHeader("Content-type", "application/json;charset=UTF-8");
+			httpServletResponse.setHeader("Content-type", "application/json;");
 			httpServletResponse.setStatus(200);
 			ServiceResult serviceResult = ServiceResult.createFailServiceResult(exception.getMessage());
 			String jsonStr = gson.toJson(serviceResult);

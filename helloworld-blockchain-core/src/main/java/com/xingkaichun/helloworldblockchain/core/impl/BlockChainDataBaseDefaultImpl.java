@@ -14,7 +14,6 @@ import com.xingkaichun.helloworldblockchain.core.tools.BlockChainDataBaseKeyTool
 import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
 import com.xingkaichun.helloworldblockchain.core.tools.TextSizeRestrictionTool;
 import com.xingkaichun.helloworldblockchain.core.tools.TransactionTool;
-import com.xingkaichun.helloworldblockchain.core.utils.ByteUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.EncodeDecodeUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LevelDBUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
@@ -336,7 +335,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
             //区块链中没有区块，高度默认为0。
             return LongUtil.ZERO;
         }
-        return ByteUtil.bytesToLong(bytesBlockChainHeight);
+        return LevelDBUtil.bytesToLong(bytesBlockChainHeight);
     }
 
     @Override
@@ -345,16 +344,16 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         if(byteTotalTransactionQuantity == null){
             return LongUtil.ZERO;
         }
-        return ByteUtil.bytesToLong(byteTotalTransactionQuantity);
+        return LevelDBUtil.bytesToLong(byteTotalTransactionQuantity);
     }
 
     @Override
     public long queryBlockHeightByBlockHash(String blockHash) {
-        byte[] bytesBlockHashToBlockHeightKey = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildBlockHashToBlockHeightKey(blockHash));
-        if(bytesBlockHashToBlockHeightKey == null){
+        byte[] bytesBlockHeight = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildBlockHashToBlockHeightKey(blockHash));
+        if(bytesBlockHeight == null){
             return LongUtil.ZERO;
         }
-        return ByteUtil.bytesToLong(bytesBlockHashToBlockHeightKey);
+        return LevelDBUtil.bytesToLong(bytesBlockHeight);
     }
     //endregion
 
@@ -521,23 +520,23 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         long transactionSize = queryTransactionSize();
         byte[] totalTransactionQuantityKey = BlockChainDataBaseKeyTool.buildTotalTransactionQuantityKey();
         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-            writeBatch.put(totalTransactionQuantityKey, ByteUtil.longToBytes(transactionSize + BlockTool.getTransactionCount(block)));
+            writeBatch.put(totalTransactionQuantityKey, LevelDBUtil.longToBytes(transactionSize + BlockTool.getTransactionCount(block)));
         }else{
-            writeBatch.put(totalTransactionQuantityKey, ByteUtil.longToBytes(transactionSize - BlockTool.getTransactionCount(block)));
+            writeBatch.put(totalTransactionQuantityKey, LevelDBUtil.longToBytes(transactionSize - BlockTool.getTransactionCount(block)));
         }
         //存储区块Hash到区块高度的映射
         byte[] blockHashBlockHeightKey = BlockChainDataBaseKeyTool.buildBlockHashToBlockHeightKey(block.getHash());
         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-            writeBatch.put(blockHashBlockHeightKey, ByteUtil.longToBytes(block.getHeight()));
+            writeBatch.put(blockHashBlockHeightKey, LevelDBUtil.longToBytes(block.getHeight()));
         }else{
             writeBatch.delete(blockHashBlockHeightKey);
         }
         //存储区块链的高度
         byte[] blockChainHeightKey = BlockChainDataBaseKeyTool.buildBlockChainHeightKey();
         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-            writeBatch.put(blockChainHeightKey,ByteUtil.longToBytes(block.getHeight()));
+            writeBatch.put(blockChainHeightKey,LevelDBUtil.longToBytes(block.getHeight()));
         }else{
-            writeBatch.put(blockChainHeightKey,ByteUtil.longToBytes(block.getHeight()-1));
+            writeBatch.put(blockChainHeightKey,LevelDBUtil.longToBytes(block.getHeight()-1));
         }
 
         List<Transaction> transactionList = block.getTransactions();
