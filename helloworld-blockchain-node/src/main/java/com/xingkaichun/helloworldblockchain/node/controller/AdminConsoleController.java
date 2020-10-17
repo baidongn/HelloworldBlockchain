@@ -2,6 +2,7 @@ package com.xingkaichun.helloworldblockchain.node.controller;
 
 import com.google.common.base.Strings;
 import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
+import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
 import com.xingkaichun.helloworldblockchain.netcore.dto.common.ServiceResult;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationDto;
@@ -203,7 +204,7 @@ public class AdminConsoleController {
                 return ServiceResult.createFailServiceResult("矿工正在挖矿，请先暂停挖矿，再设置矿工账户地址");
             }
             String minerAddress = request.getMinerAddress();
-            if(minerAddress == null || "".equals(minerAddress)){
+            if(StringUtil.isEmpty(minerAddress)){
                 return ServiceResult.createFailServiceResult("请输入矿工地址");
             }
             blockChainCore.getMiner().resetMinerAddress(minerAddress);

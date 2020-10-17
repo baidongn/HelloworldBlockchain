@@ -51,7 +51,7 @@ public class NodeTransportDtoTool {
         String previousBlockHash;
         long height = blockDTO.getHeight();
         if(LongUtil.isEquals(height,LongUtil.ONE)){
-            previousBlockHash = GlobalSetting.GenesisBlockConstant.FIRST_BLOCK_PREVIOUS_HASH;
+            previousBlockHash = GlobalSetting.GenesisBlock.HASH;
         } else {
             Block previousBlock = blockChainDataBase.queryBlockByBlockHeight(height-LongUtil.ONE);
             if(previousBlock == null){

@@ -70,14 +70,14 @@ public class BlockChainDataBaseKeyTool {
         String stringKey = UNSPEND_TRANSACTION_OUTPUT_HASH_TO_UNSPEND_TRANSACTION_OUTPUT_PREFIX_FLAG + transactionOutputHash + END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
-    public static byte[] buildAddressToTransactionOuputListKey(TransactionOutput transactionOutput) {
+    public static byte[] buildAddressToTransactionOutputListKey(TransactionOutput transactionOutput) {
         String address = transactionOutput.getAddress();
         String transactionOutputHash = transactionOutput.getTransactionOutputHash();
         String stringKey = ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG + transactionOutputHash + END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
-    public static byte[] buildAddressToTransactionOuputListKey(String address) {
-        String stringKey = ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG + END_FLAG;
+    public static byte[] buildAddressToTransactionOutputListKey(String address) {
+        String stringKey = ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
     public static byte[] buildAddressToUnspendTransactionOutputListKey(TransactionOutput transactionOutput) {
@@ -87,7 +87,7 @@ public class BlockChainDataBaseKeyTool {
         return LevelDBUtil.stringToBytes(stringKey);
     }
     public static byte[] buildAddressToUnspendTransactionOutputListKey(String address) {
-        String stringKey = ADDRESS_TO_UNSPEND_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + END_FLAG;
+        String stringKey = ADDRESS_TO_UNSPEND_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
     public static byte[] buildTotalTransactionQuantityKey() {

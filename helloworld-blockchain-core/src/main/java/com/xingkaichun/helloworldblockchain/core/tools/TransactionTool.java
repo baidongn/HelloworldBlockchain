@@ -1,6 +1,6 @@
 package com.xingkaichun.helloworldblockchain.core.tools;
 
-import com.google.common.base.Joiner;
+import com.google.common.primitives.Bytes;
 import com.xingkaichun.helloworldblockchain.core.model.script.Script;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptExecuteResult;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
@@ -8,6 +8,7 @@ import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionIn
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionType;
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
+import com.xingkaichun.helloworldblockchain.core.utils.ByteUtil;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.crypto.HexUtil;
 import com.xingkaichun.helloworldblockchain.crypto.SHA256Util;
@@ -15,12 +16,13 @@ import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionDTO
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionInputDTO;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionOutputDTO;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
-import com.xingkaichun.helloworldblockchain.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Transaction工具类
@@ -43,9 +45,8 @@ public class TransactionTool {
     public static long getInputsValue(List<TransactionInput> inputs) {
         long total = 0;
         if(inputs != null){
-            for(TransactionInput i : inputs) {
-                if(i.getUnspendTransactionOutput() == null) continue;
-                total += i.getUnspendTransactionOutput().getValue();
+            for(TransactionInput input : inputs) {
+                total += input.getUnspendTransactionOutput().getValue();
             }
         }
         return total;
@@ -108,82 +109,48 @@ public class TransactionTool {
         return true;
     }
 
-
-
-
-    /**
-     * 校验交易的哈希是否正确
-     */
-    public static boolean isTransactionHashRight(Transaction transaction) {
-        String transactionHash = transaction.getTransactionHash();
-        String targetTransactionHash = calculateTransactionHash(transaction);
-        return transactionHash.equals(targetTransactionHash);
-    }
-
-    /**
-     * 校验交易输出的哈希是否正确
-     */
-    public static boolean isTransactionOutputHashRight(Transaction transaction,TransactionOutput output) {
-        String transactionOutputHash = output.getTransactionOutputHash();
-        String targetTransactionOutputHash = calculateTransactionOutputHash(transaction,output);
-        return transactionOutputHash.equals(targetTransactionOutputHash);
-    }
-
     /**
      * 计算交易哈希
      */
     public static String calculateTransactionHash(Transaction transaction){
-        List<String> inputHashList = new ArrayList<>();
-        List<TransactionInput> inputs = transaction.getInputs();
-        if(inputs != null && inputs.size()!=0){
-            for(TransactionInput transactionInput:inputs){
-                inputHashList.add(transactionInput.getUnspendTransactionOutput().getTransactionOutputHash());
-            }
-        }
-        List<String> outputHashList = new ArrayList<>();
-        List<TransactionOutput> outputs = transaction.getOutputs();
-        if(outputs != null && outputs.size()!=0){
-            for(TransactionOutput transactionOutput:outputs){
-                outputHashList.add(transactionOutput.getTransactionOutputHash());
-            }
-        }
-        return calculateTransactionHash(transaction.getTimestamp(),inputHashList,outputHashList);
+        return calculateTransactionHash(NodeTransportDtoTool.classCast(transaction));
     }
 
     /**
      * 计算交易哈希
      */
     public static String calculateTransactionHash(TransactionDTO transactionDTO){
-        List<String> inputHashList = new ArrayList<>();
-        List<TransactionInputDTO> inputs = transactionDTO.getInputs();
-        if(inputs != null && inputs.size()!=0){
-            for(TransactionInputDTO transactionInputDTO:inputs){
-                inputHashList.add(transactionInputDTO.getUnspendTransactionOutputHash());
-            }
-        }
-        List<String> outputHashList = new ArrayList<>();
-        List<TransactionOutputDTO> outputs = transactionDTO.getOutputs();
-        long transactionOutputSequence = 0;
-        for(TransactionOutputDTO transactionOutputDTO:outputs){
-            transactionOutputSequence++;
-            outputHashList.add(calculateTransactionOutputHash(transactionDTO.getTimestamp(),transactionOutputSequence,transactionOutputDTO));
-        }
-        return calculateTransactionHash(transactionDTO.getTimestamp(),inputHashList,outputHashList);
+        byte[] bytesTransaction = bytesTransaction(transactionDTO);
+        byte[] sha256Digest = SHA256Util.digest(bytesTransaction);
+        return HexUtil.bytesToHexString(sha256Digest);
     }
 
     /**
-     * 计算交易哈希
+     * 字节型脚本
      */
-    private static String calculateTransactionHash(long currentTimeMillis,List<String> inputHashList,List<String> outputHashList){
-        String data = "[" + currentTimeMillis + "]";
-        if(inputHashList != null && inputHashList.size()!=0){
-            data += "[" + Joiner.on(" ").join(inputHashList) + "]";
+    public static byte[] bytesTransaction(TransactionDTO transactionDTO) {
+        long timestamp = transactionDTO.getTimestamp();
+        byte[] bytesTimestamp = ByteUtil.longToBytes8(timestamp);
+
+        List<byte[]> bytesTransactionInputHashList = new ArrayList<>();
+        List<TransactionInputDTO> inputs = transactionDTO.getInputs();
+        if(inputs != null && inputs.size()!=0){
+            for(TransactionInputDTO transactionInputDTO:inputs){
+                byte[] bytesTransactionInputHash = HexUtil.hexStringToBytes(transactionInputDTO.getUnspendTransactionOutputHash());
+                bytesTransactionInputHashList.add(bytesTransactionInputHash);
+            }
         }
-        if(outputHashList != null && outputHashList.size()!=0){
-            data += "[" + Joiner.on(" ").join(outputHashList) + "]";
+        List<byte[]> bytesTransactionOutputList = new ArrayList<>();
+        List<TransactionOutputDTO> outputs = transactionDTO.getOutputs();
+        for(TransactionOutputDTO transactionOutputDTO:outputs){
+            byte[] bytesTransactionOutput = bytesTransactionOutput(transactionOutputDTO.getValue(),transactionOutputDTO.getScriptLock());
+            bytesTransactionOutputList.add(bytesTransactionOutput);
         }
-        byte[] sha256Digest = SHA256Util.digest(ByteUtil.stringToBytes(data));
-        return HexUtil.bytesToHexString(sha256Digest);
+
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTimestamp),
+                ByteUtil.concatLengthBytes(bytesTransactionInputHashList),
+                ByteUtil.concatLengthBytes(bytesTransactionOutputList));
+        return data;
     }
 
     /**
@@ -204,11 +171,8 @@ public class TransactionTool {
      * 计算交易输出哈希
      */
     private static String calculateTransactionOutputHash(long currentTimeMillis, long transactionOutputSequence, long value, List<String> scriptLock) {
-        String forHash = "[" + currentTimeMillis + "]";
-        forHash += "[" + transactionOutputSequence + "]";
-        forHash += "[" + value + "]";
-        forHash += "[" + Joiner.on(" ").join(scriptLock) + "]";
-        byte[] sha256Digest = SHA256Util.digest(ByteUtil.stringToBytes(forHash));
+        byte[] data = bytesTransactionOutput(currentTimeMillis,transactionOutputSequence,value,scriptLock);
+        byte[] sha256Digest = SHA256Util.digest(data);
         return HexUtil.bytesToHexString(sha256Digest);
     }
 
@@ -272,6 +236,79 @@ public class TransactionTool {
         if(targetMinerReward < outputs.get(0).getValue()){
             logger.debug("挖矿奖励数据异常，挖矿奖励金额大于系统核算奖励金额。");
             return false;
+        }
+        return true;
+    }
+
+    /**
+     * 字节型交易输出
+     */
+    public static byte[] bytesTransactionOutput(long value, List<String> scriptLock) {
+        byte[] bytesValue = ByteUtil.longToBytes8(value);
+        byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
+
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesValue),
+                ByteUtil.concatLengthBytes(bytesScriptLock));
+        return data;
+    }
+    /**
+     * 字节型交易输出
+     */
+    public static byte[] bytesTransactionOutput(long currentTimeMillis, long transactionOutputSequence, long value, List<String> scriptLock) {
+        byte[] bytesCurrentTimeMillis = ByteUtil.longToBytes8(currentTimeMillis);
+        byte[] bytesTransactionOutputSequence = ByteUtil.longToBytes8(transactionOutputSequence);
+        byte[] bytesValue = ByteUtil.longToBytes8(value);
+        byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
+
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesCurrentTimeMillis),
+                ByteUtil.concatLengthBytes(bytesTransactionOutputSequence),
+                ByteUtil.concatLengthBytes(bytesValue),
+                ByteUtil.concatLengthBytes(bytesScriptLock));
+        return data;
+    }
+
+    /**
+     * 是否存在重复的交易输入
+     */
+    public static boolean isExistDuplicateTransactionInput(Transaction transaction) {
+        List<TransactionInput> inputs = transaction.getInputs();
+        if(inputs == null || inputs.size()==0){
+            return false;
+        }
+        Set<String> hashSet = new HashSet<>();
+        for(TransactionInput transactionInput : inputs) {
+            TransactionOutput unspendTransactionOutput = transactionInput.getUnspendTransactionOutput();
+            String unspendTransactionOutputHash = unspendTransactionOutput.getTransactionOutputHash();
+            if(hashSet.contains(unspendTransactionOutputHash)){
+                return true;
+            }
+            hashSet.add(unspendTransactionOutputHash);
+        }
+        return false;
+    }
+
+    /**
+     * 交易新产生的哈希是否存在重复
+     */
+    public static boolean isExistDuplicateNewHash(Transaction transaction) {
+        String transactionHash = transaction.getTransactionHash();
+        //校验：只从交易对象层面校验，交易中新产生的哈希是否有重复
+        Set<String> hashSet = new HashSet<>();
+        if(hashSet.contains(transactionHash)){
+            return false;
+        }else {
+            hashSet.add(transactionHash);
+        }
+        List<TransactionOutput> outputs = transaction.getOutputs();
+        if(outputs != null){
+            for(TransactionOutput transactionOutput : outputs) {
+                String transactionOutputHash = transactionOutput.getTransactionOutputHash();
+                if(hashSet.contains(transactionOutputHash)){
+                    return false;
+                }else {
+                    hashSet.add(transactionOutputHash);
+                }
+            }
         }
         return true;
     }

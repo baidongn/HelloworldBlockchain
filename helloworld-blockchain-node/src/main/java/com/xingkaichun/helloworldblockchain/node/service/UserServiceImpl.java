@@ -1,5 +1,6 @@
 package com.xingkaichun.helloworldblockchain.node.service;
 
+import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.node.dao.UserDao;
 import com.xingkaichun.helloworldblockchain.node.dto.user.UserDto;
 import com.xingkaichun.helloworldblockchain.node.model.UserEntity;
@@ -31,7 +32,7 @@ public class UserServiceImpl implements UserService {
         if(userEntity == null){
             return null;
         }
-        if(!userEntity.getPassword().equals(userDtoReq.getPassword())){
+        if(!StringUtil.isEquals(userEntity.getPassword(),userDtoReq.getPassword())){
             return null;
         }
         UserDto userDto = convertUserEntity2UserDto(userEntity);

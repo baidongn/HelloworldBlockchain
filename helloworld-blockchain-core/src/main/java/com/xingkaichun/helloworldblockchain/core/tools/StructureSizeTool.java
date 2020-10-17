@@ -7,7 +7,9 @@ import com.xingkaichun.helloworldblockchain.core.model.script.ScriptLock;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionInput;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
+import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionType;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
+import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,23 +20,9 @@ import java.util.List;
  *
  * @author 邢开春 微信HelloworldBlockchain 邮箱xingkaichun@qq.com
  */
-public class TextSizeRestrictionTool {
+public class StructureSizeTool {
 
-    private static final Logger logger = LoggerFactory.getLogger(TextSizeRestrictionTool.class);
-
-
-    //交易文本字符串最大长度值
-    public static final long TRANSACTION_TEXT_MAX_SIZE = 1024;
-    //区块存储容量限制
-    public static final long BLOCK_TEXT_MAX_SIZE = 1024 * 1024;
-    //区块最多含有的交易数量
-    public static final long BLOCK_MAX_TRANSACTION_SIZE = BLOCK_TEXT_MAX_SIZE/TRANSACTION_TEXT_MAX_SIZE;
-    //nonce最大值
-    public static final long MAX_NONCE = Long.MAX_VALUE;
-    //nonce最小值
-    public static final long MIN_NONCE = 0;
-
-
+    private static final Logger logger = LoggerFactory.getLogger(StructureSizeTool.class);
 
     //region 校验存储容量
     /**
@@ -43,30 +31,35 @@ public class TextSizeRestrictionTool {
     public static boolean isBlockStorageCapacityLegal(Block block) {
         //校验时间戳占用存储空间
         long timestamp = block.getTimestamp();
-        if(String.valueOf(timestamp).length() != 13){
-            logger.debug("区块校验失败：区块时间戳所占存储空间不正确。");
+        //校验时间的长度
+        if(String.valueOf(timestamp).length() < GlobalSetting.BlockConstant.BLOCK_TEXT_TIMESTAMP_MIN_SIZE){
+            logger.debug("区块校验失败：区块时间戳所占存储空间过小。");
+            return false;
+        }
+        if(String.valueOf(timestamp).length() > GlobalSetting.BlockConstant.BLOCK_TEXT_TIMESTAMP_MAX_SIZE){
+            logger.debug("区块校验失败：区块时间戳所占存储空间过大。");
             return false;
         }
 
         //校验共识占用存储空间
         long nonce = block.getNonce();
-        if(LongUtil.isLessThan(nonce, TextSizeRestrictionTool.MIN_NONCE)){
+        if(LongUtil.isLessThan(nonce, GlobalSetting.BlockConstant.MIN_NONCE)){
             return false;
         }
-        if(LongUtil.isGreatThan(nonce, TextSizeRestrictionTool.MAX_NONCE)){
+        if(LongUtil.isGreatThan(nonce, GlobalSetting.BlockConstant.MAX_NONCE)){
             return false;
         }
 
         //校验区块中的交易占用的存储空间
         //校验区块中交易的数量
-        List<Transaction> transactions = block.getTransactions();
-        long transactionsSize = transactions==null?0L:transactions.size();
-        if(transactionsSize > TextSizeRestrictionTool.BLOCK_MAX_TRANSACTION_SIZE){
+        long transactionCount = BlockTool.getTransactionCount(block);
+        if(transactionCount > GlobalSetting.BlockConstant.BLOCK_MAX_TRANSACTION_SIZE){
             logger.debug(String.format("区块数据异常，区块里包含的交易数量超过限制值%d。",
-                    TextSizeRestrictionTool.BLOCK_MAX_TRANSACTION_SIZE));
+                    GlobalSetting.BlockConstant.BLOCK_MAX_TRANSACTION_SIZE));
             return false;
         }
-        //校验每一笔交易占用的存储空间
+        List<Transaction> transactions = block.getTransactions();
+        //校验交易的大小
         if(transactions != null){
             for(Transaction transaction:transactions){
                 if(!isTransactionStorageCapacityLegal(transaction)){
@@ -82,18 +75,17 @@ public class TextSizeRestrictionTool {
      * 校验交易的存储容量是否合法：用来限制交易的所占存储空间的大小。
      */
     public static boolean isTransactionStorageCapacityLegal(Transaction transaction) {
-        if(transaction == null){
-            logger.debug("交易数据异常，交易不能为空。");
-            return false;
-        }
-
         long timestamp = transaction.getTimestamp();
         List<TransactionInput> inputs = transaction.getInputs();
         List<TransactionOutput> outputs = transaction.getOutputs();
 
         //校验时间的长度
-        if(String.valueOf(timestamp).length() != 13){
-            logger.debug("交易校验失败：交易时间戳所占存储空间不正确。");
+        if(String.valueOf(timestamp).length() < GlobalSetting.TransactionConstant.TRANSACTION_TEXT_TIMESTAMP_MIN_SIZE){
+            logger.debug("交易校验失败：交易时间戳所占存储空间过小。");
+            return false;
+        }
+        if(String.valueOf(timestamp).length() > GlobalSetting.TransactionConstant.TRANSACTION_TEXT_TIMESTAMP_MAX_SIZE){
+            logger.debug("交易校验失败：交易时间戳所占存储空间过大。");
             return false;
         }
 
@@ -101,8 +93,8 @@ public class TextSizeRestrictionTool {
         if(inputs != null){
             for(TransactionInput transactionInput:inputs){
                 ScriptKey scriptKey = transactionInput.getScriptKey();
-                if(calculateScriptTextSize(scriptKey)>500){
-                    logger.debug("交易校验失败：交易输入脚本所占存储空间过大。");
+                if(calculateScriptTextSize(scriptKey) > GlobalSetting.ScriptConstant.SCRIPT_INPUT_TEXT_MAX_SIZE){
+                    logger.debug("交易校验失败：交易输入脚本所占存储空间超出限制。");
                     return false;
                 }
             }
@@ -112,31 +104,31 @@ public class TextSizeRestrictionTool {
         if(outputs != null){
             for(TransactionOutput transactionOutput:outputs){
                 String address = transactionOutput.getAddress();
-                if(address.length()<=20){
+                if(address.length() < GlobalSetting.TransactionConstant.TRANSACTION_TEXT_ADDRESS_MIN_SIZE){
                     logger.debug("账户地址长度过短");
                     return false;
                 }
-                if(address.length()>=40){
+                if(address.length() > GlobalSetting.TransactionConstant.TRANSACTION_TEXT_ADDRESS_MAX_SIZE){
                     logger.debug("账户地址长度过长");
                     return false;
                 }
 
                 long value = transactionOutput.getValue();
-                if(calculateLongTextSize(value)>100){
-                    logger.debug("交易校验失败：交易金额长度超过存储限制");
+                if(calculateLongTextSize(value)> GlobalSetting.TransactionConstant.TRANSACTION_TEXT_VALUE_MAX_SIZE){
+                    logger.debug("交易校验失败：交易金额所占存储空间超出限制。");
                     return false;
                 }
 
                 ScriptLock scriptLock = transactionOutput.getScriptLock();
-                if(calculateScriptTextSize(scriptLock)>500){
-                    logger.debug("交易校验失败：交易输出脚本所占存储空间过大。");
+                if(calculateScriptTextSize(scriptLock) > GlobalSetting.ScriptConstant.SCRIPT_OUTPUT_TEXT_MAX_SIZE){
+                    logger.debug("交易校验失败：交易输出脚本所占存储空间超出限制。");
                     return false;
                 }
             }
         }
 
         //校验整笔交易所占存储空间
-        if(calculateTransactionTextSize(transaction) > TextSizeRestrictionTool.TRANSACTION_TEXT_MAX_SIZE){
+        if(calculateTransactionTextSize(transaction) > GlobalSetting.BlockConstant.TRANSACTION_TEXT_MAX_SIZE){
             logger.debug("交易数据异常，交易所占存储空间太大。");
             return false;
         }
@@ -218,4 +210,73 @@ public class TextSizeRestrictionTool {
         return String.valueOf(number).length();
     }
     //endregion
+
+    /**
+     * 校验区块的结构
+     */
+    public static boolean isBlockStructureLegal(Block block) {
+        List<Transaction> transactions = block.getTransactions();
+        if(transactions == null || transactions.size()==0){
+            logger.debug("区块数据异常：区块中的交易数量为0。区块必须有一笔CoinBase的交易。");
+            return false;
+        }
+        for(int i=0; i<transactions.size(); i++){
+            Transaction transaction = transactions.get(i);
+            if(i == 0){
+                if(transaction.getTransactionType() != TransactionType.COINBASE){
+                    logger.debug("区块数据异常：区块第一笔交易必须是CoinBase。");
+                    return false;
+                }
+            }else {
+                if(transaction.getTransactionType() != TransactionType.NORMAL){
+                    logger.debug("区块数据异常：区块非第一笔交易必须是普通交易。");
+                    return false;
+                }
+            }
+        }
+        //校验交易的结构
+        for(int i=0; i<transactions.size(); i++){
+            Transaction transaction = transactions.get(i);
+            if(!isTransactionStructureLegal(transaction)){
+                logger.debug("交易数据异常：交易结构异常。");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 校验交易的结构
+     */
+    public static boolean isTransactionStructureLegal(Transaction transaction) {
+        TransactionType transactionType = transaction.getTransactionType();
+        if(TransactionType.COINBASE == transactionType){
+            List<TransactionInput> inputs = transaction.getInputs();
+            if(inputs != null && inputs.size()!=0){
+                logger.debug("交易数据异常：CoinBase交易不能有交易输入。");
+                return false;
+            }
+            List<TransactionOutput> outputs = transaction.getOutputs();
+            if(outputs == null || outputs.size()!=1){
+                logger.debug("交易数据异常：CoinBase交易有且只能有一笔交易。");
+                return false;
+            }
+            return true;
+        }else if(TransactionType.NORMAL == transactionType){
+            List<TransactionInput> inputs = transaction.getInputs();
+            if(inputs != null && inputs.size() > GlobalSetting.TransactionConstant.TRANSACTION_MAX_INPUT_COUNT){
+                logger.debug("交易数据异常：普通交易的交易输入数量超过限制。");
+                return false;
+            }
+            List<TransactionOutput> outputs = transaction.getOutputs();
+            if(outputs == null || outputs.size() > GlobalSetting.TransactionConstant.TRANSACTION_MAX_OUTPUT_COUNT){
+                logger.debug("交易数据异常：普通交易的交易输出数量超过限制。");
+                return false;
+            }
+            return true;
+        }else {
+            logger.debug("交易数据异常：不能识别的交易的类型。");
+            return false;
+        }
+    }
 }

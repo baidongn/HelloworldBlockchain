@@ -1,6 +1,5 @@
 package com.xingkaichun.helloworldblockchain.core.utils;
 
-import com.xingkaichun.helloworldblockchain.util.ByteUtil;
 import org.iq80.leveldb.*;
 import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.slf4j.Logger;
@@ -8,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * LevelDB工具类
@@ -73,10 +73,18 @@ public class LevelDBUtil {
     }
 
     public static byte[] stringToBytes(String strValue) {
-        return ByteUtil.stringToBytes(strValue);
+        return strValue.getBytes(StandardCharsets.UTF_8);
     }
 
     public static String bytesToString(byte[] bytesValue) {
-        return ByteUtil.bytesToString(bytesValue);
+        return new String(bytesValue, StandardCharsets.UTF_8);
+    }
+
+    public static byte[] longToBytes(long longValue) {
+        return stringToBytes(String.valueOf(longValue));
+    }
+
+    public static long bytesToLong(byte[] bytesValue) {
+        return Long.valueOf(bytesToString(bytesValue));
     }
 }

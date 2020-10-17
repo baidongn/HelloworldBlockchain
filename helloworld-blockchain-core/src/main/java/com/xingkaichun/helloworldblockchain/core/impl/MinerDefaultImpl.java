@@ -215,8 +215,8 @@ public class MinerDefaultImpl extends Miner {
         nonNonceBlock.setTimestamp(timestamp);
 
         if(tailBlock == null){
-            nonNonceBlock.setHeight(GlobalSetting.GenesisBlockConstant.FIRST_BLOCK_HEIGHT);
-            nonNonceBlock.setPreviousBlockHash(GlobalSetting.GenesisBlockConstant.FIRST_BLOCK_PREVIOUS_HASH);
+            nonNonceBlock.setHeight(GlobalSetting.GenesisBlock.HEIGHT +1);
+            nonNonceBlock.setPreviousBlockHash(GlobalSetting.GenesisBlock.HASH);
         } else {
             nonNonceBlock.setHeight(tailBlock.getHeight()+1);
             nonNonceBlock.setPreviousBlockHash(tailBlock.getHash());
