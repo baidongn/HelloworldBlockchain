@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class TransactionDTO implements Serializable {
 
-    //交易时间戳
+    //交易时间戳 TODO 删除
     private long timestamp;
     //交易输入
     private List<TransactionInputDTO> inputs;
