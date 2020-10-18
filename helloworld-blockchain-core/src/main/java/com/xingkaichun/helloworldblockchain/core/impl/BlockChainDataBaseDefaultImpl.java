@@ -41,7 +41,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
     //region 变量与构造函数
     private static final Logger logger = LoggerFactory.getLogger(BlockChainDataBaseDefaultImpl.class);
 
-    private static final String BlockChain_DataBase_DirectName = "BlockChainDataBase";
+    private static final String BLOCKCHAIN_DATABASE_DIRECT_NAME = "BlockChainDataBase";
     //区块链数据库
     private DB blockChainDB;
 
@@ -53,7 +53,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
 
     public BlockChainDataBaseDefaultImpl(String blockchainDataPath,Incentive incentive,Consensus consensus) {
         super(consensus,incentive);
-        File blockChainDBFile = new File(blockchainDataPath,BlockChain_DataBase_DirectName);
+        File blockChainDBFile = new File(blockchainDataPath,BLOCKCHAIN_DATABASE_DIRECT_NAME);
         this.blockChainDB = LevelDBUtil.createDB(blockChainDBFile);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LevelDBUtil.closeDB(blockChainDB);
@@ -133,63 +133,49 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
             logger.debug("区块数据异常，请校验区块的结构。");
             return false;
         }
-        //校验交易的存储容量
+        //校验区块的存储容量
         if(!StructureSizeTool.isBlockStorageCapacityLegal(block)){
             logger.debug("区块数据异常，请校验区块的大小。");
             return false;
         }
 
+        Block previousBlock = queryTailBlock();
         //校验区块写入的属性值
-        if(!BlockPropertyTool.isBlockWriteRight(block)){
+        if(!BlockPropertyTool.isWritePropertiesRight(previousBlock,block)){
             logger.debug("区块校验失败：区块的属性写入值与实际计算结果不一致。");
             return false;
         }
 
-
-        Block previousBlock = queryTailBlock();
+        //校验业务
         //校验区块时间
         if(!BlockTool.isBlockTimestampLegal(previousBlock,block)){
             logger.debug("区块生成的时间太滞后。");
             return false;
         }
-        //校验区块前区块哈希
-        if(!BlockTool.isBlockPreviousBlockHashLegal(previousBlock,block)){
-            logger.debug("区块生成的时间太滞后。");
-            return false;
-        }
-        //校验区块高度
-        if(!BlockTool.isBlockHeightLegal(previousBlock,block)){
-            logger.debug("区块生成的时间太滞后。");
-            return false;
-        }
-
-        //双花校验
-        if(isDoubleSpendAttackHappen(block)){
-            logger.debug("区块数据异常，检测到双花攻击。");
-            return false;
-        }
-
         //新产生的哈希是否合法
         if(!isNewHashLegal(block)){
             logger.debug("区块数据异常，区块中新产生的哈希异常。");
             return false;
         }
-
-        //校验共识
-        boolean isReachConsensus = consensus.isReachConsensus(this,block);
-        if(!isReachConsensus){
+        //双花校验
+        if(isDoubleSpendAttackHappen(block)){
+            logger.debug("区块数据异常，检测到双花攻击。");
             return false;
         }
-
-        //激励校验
-        if(!BlockTool.isIncentiveRight(incentive.mineAward(block),block)){
-            logger.debug("区块数据异常，激励异常。");
+        //校验共识
+        if(!isReachConsensus(block)){
+            logger.debug("区块数据异常，未满足共识规则。");
+            return false;
+        }
+        //校验激励
+        if(!isIncentiveRight(block)){
+            logger.debug("区块数据异常，未满足共识规则。");
             return false;
         }
 
         //从交易角度校验每一笔交易
-        for(Transaction tx : block.getTransactions()){
-            boolean transactionCanAddToNextBlock = isTransactionCanAddToNextBlock(block,tx);
+        for(Transaction transaction : block.getTransactions()){
+            boolean transactionCanAddToNextBlock = isTransactionCanAddToNextBlock(block,transaction);
             if(!transactionCanAddToNextBlock){
                 logger.debug("区块数据异常，交易异常。");
                 return false;
@@ -212,7 +198,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         }
 
         //校验交易的属性是否与计算得来的一致
-        if(!TransactionPropertyTool.isTransactionWriteRight(block,transaction)){
+        if(!TransactionPropertyTool.isWritePropertiesRight(block,transaction)){
             return false;
         }
 
@@ -242,32 +228,26 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
 
         //根据交易类型，做进一步的校验
         if(transaction.getTransactionType() == TransactionType.COINBASE){
-            //激励校验
-            if(!TransactionTool.isIncentiveRight(incentive.mineAward(block),transaction)){
+            //校验激励
+            if(!isIncentiveRight(block,transaction)){
                 logger.debug("区块数据异常，激励异常。");
                 return false;
             }
             return true;
         } else if(transaction.getTransactionType() == TransactionType.NORMAL){
-            long inputsValue = TransactionTool.getInputsValue(transaction);
-            long outputsValue = TransactionTool.getOutputsValue(transaction);
-            if(inputsValue < outputsValue) {
-                logger.debug("交易校验失败：交易的输入必须大于等于交易的输出。不合法的交易。");
+            //交易输入必须要大于交易输出
+            if(!TransactionTool.isTransactionInputsGreatEqualThanOutputsRight(transaction)) {
+                logger.debug("交易校验失败：交易输入必须要大于交易输出。");
                 return false;
             }
-            //交易手续费
-            if((inputsValue - outputsValue) < GlobalSetting.TransactionConstant.MIN_TRANSACTION_FEE){
-                logger.debug(String.format("交易校验失败：交易手续费不能小于%s。不合法的交易。", GlobalSetting.TransactionConstant.MIN_TRANSACTION_FEE));
+            //转账手续费
+            if(!TransactionTool.isTransactionFeeRight(transaction)) {
+                logger.debug("交易校验失败：手续费不正确。");
                 return false;
             }
-            //脚本脚本
-            try{
-                if(!TransactionTool.verifyScript(transaction)) {
-                    logger.debug("交易校验失败：校验交易签名失败。不合法的交易。");
-                    return false;
-                }
-            }catch (Exception e){
-                logger.debug("交易校验失败：校验交易签名失败。不合法的交易。",e);
+            //脚本
+            if(!TransactionTool.verifyScript(transaction)) {
+                logger.debug("交易校验失败：交易脚本钥匙解锁交易脚本锁异常。");
                 return false;
             }
             return true;
@@ -798,4 +778,32 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         return false;
     }
     //endregion
+
+    /**
+     * 激励交易正确吗？
+     */
+    private boolean isIncentiveRight(Block block, Transaction transaction) {
+        //激励校验
+        if(!TransactionTool.isIncentiveRight(incentive.mineAward(block),transaction)){
+            logger.debug("区块数据异常，激励异常。");
+            return false;
+        }
+        return true;
+    }
+    /**
+     * 区块激励正确吗？
+     */
+    private boolean isIncentiveRight(Block block) {
+        if(!BlockTool.isIncentiveRight(incentive.mineAward(block),block)){
+            logger.debug("区块数据异常，激励异常。");
+            return false;
+        }
+        return true;
+    }
+    /**
+     * 区块满足共识规则吗？
+     */
+    private boolean isReachConsensus(Block block) {
+        return consensus.isReachConsensus(this,block);
+    }
 }

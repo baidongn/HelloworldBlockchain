@@ -22,9 +22,8 @@ public class TransactionPropertyTool {
 
     /**
      * 校验交易的属性是否与计算得来的一致
-     * TODO 实际上这个方法可以省略
      */
-    public static boolean isTransactionWriteRight(Block block, Transaction transaction) {
+    public static boolean isWritePropertiesRight(Block block, Transaction transaction) {
         if(!isTransactionTimestampRight(block,transaction)){
             return false;
         }

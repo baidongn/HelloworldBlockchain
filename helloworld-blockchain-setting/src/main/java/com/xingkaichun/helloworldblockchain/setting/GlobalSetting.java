@@ -91,12 +91,12 @@ public class GlobalSetting {
      * 区块设置
      */
     public static class BlockConstant {
+        //区块最多含有的交易数量
+        public static final long BLOCK_MAX_TRANSACTION_COUNT = 1000;
         //交易文本字符串最大长度值
         public static final long TRANSACTION_TEXT_MAX_SIZE = 1024;
         //区块存储容量限制
-        public static final long BLOCK_TEXT_MAX_SIZE = 1024 * 1024;
-        //区块最多含有的交易数量
-        public static final long BLOCK_MAX_TRANSACTION_SIZE = BLOCK_TEXT_MAX_SIZE/TRANSACTION_TEXT_MAX_SIZE;
+        public static final long BLOCK_TEXT_MAX_SIZE = TRANSACTION_TEXT_MAX_SIZE * BLOCK_MAX_TRANSACTION_COUNT;
         //nonce最大值
         public static final long MAX_NONCE = Long.MAX_VALUE;
         //nonce最小值
@@ -134,6 +134,8 @@ public class GlobalSetting {
         public static final long TRANSACTION_TEXT_TIMESTAMP_MIN_SIZE = 13;
         //交易时间戳最大存储容量
         public static final long TRANSACTION_TEXT_TIMESTAMP_MAX_SIZE = 13;
+        //交易手续费
+        public static final long TRANSACTION_FEE_PER_100 = 1;
     }
 
     /**

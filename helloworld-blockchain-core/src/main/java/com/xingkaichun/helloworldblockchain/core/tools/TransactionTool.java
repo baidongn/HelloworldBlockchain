@@ -95,16 +95,21 @@ public class TransactionTool {
      * 验证脚本
      */
     public static boolean verifyScript(Transaction transaction) {
-        List<TransactionInput> inputs = transaction.getInputs();
-        if(inputs != null && inputs.size()!=0){
-            for(TransactionInput transactionInput:inputs){
-                Script payToClassicAddressScript = StackBasedVirtualMachine.createPayToClassicAddressScript(transactionInput.getScriptKey(),transactionInput.getUnspendTransactionOutput().getScriptLock());
-                StackBasedVirtualMachine stackBasedVirtualMachine = new StackBasedVirtualMachine();
-                ScriptExecuteResult scriptExecuteResult = stackBasedVirtualMachine.executeScript(transaction,payToClassicAddressScript);
-                if(scriptExecuteResult.size()!=1 || !Boolean.valueOf(scriptExecuteResult.pop())){
-                    return false;
+        try{
+            List<TransactionInput> inputs = transaction.getInputs();
+            if(inputs != null && inputs.size()!=0){
+                for(TransactionInput transactionInput:inputs){
+                    Script payToClassicAddressScript = StackBasedVirtualMachine.createPayToClassicAddressScript(transactionInput.getScriptKey(),transactionInput.getUnspendTransactionOutput().getScriptLock());
+                    StackBasedVirtualMachine stackBasedVirtualMachine = new StackBasedVirtualMachine();
+                    ScriptExecuteResult scriptExecuteResult = stackBasedVirtualMachine.executeScript(transaction,payToClassicAddressScript);
+                    if(scriptExecuteResult.size()!=1 || !Boolean.valueOf(scriptExecuteResult.pop())){
+                        return false;
+                    }
                 }
             }
+        }catch (Exception e){
+            logger.debug("交易校验失败：交易脚本钥匙解锁交易脚本锁异常。",e);
+            return false;
         }
         return true;
     }
@@ -198,6 +203,11 @@ public class TransactionTool {
      */
     public static boolean isTransactionAmountLegal(long transactionAmount) {
         try {
+            //交易金额不能小于等于0
+            if(transactionAmount <= 0){
+                logger.debug("交易金额不合法：交易金额不能小于等于0");
+                return false;
+            }
             //校验交易金额最小值
             if(transactionAmount < GlobalSetting.TransactionConstant.TRANSACTION_MIN_AMOUNT){
                 logger.debug("交易金额不合法：交易金额不能小于系统默认交易金额最小值");
@@ -309,6 +319,47 @@ public class TransactionTool {
                     hashSet.add(transactionOutputHash);
                 }
             }
+        }
+        return true;
+    }
+
+    /**
+     * 转账手续费是否正确
+     */
+    public static boolean isTransactionFeeRight(Transaction transaction) {
+        long inputsValue = TransactionTool.getInputsValue(transaction);
+        long outputsValue = TransactionTool.getOutputsValue(transaction);
+        long fee = inputsValue - outputsValue;
+        long targetFee = calculateTransactionFee(transaction);
+        //交易手续费
+        if(fee < targetFee){
+            logger.debug(String.format("交易校验失败：交易手续费小于计算的最小手续费。"));
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 计算转账手续费
+     */
+    public static long calculateTransactionFee(Transaction transaction) {
+        long transactionTextSize = StructureSizeTool.calculateTransactionTextSize(transaction);
+        long fee = transactionTextSize%GlobalSetting.TransactionConstant.TRANSACTION_FEE_PER_100==0?transactionTextSize/GlobalSetting.TransactionConstant.TRANSACTION_FEE_PER_100:transactionTextSize/GlobalSetting.TransactionConstant.TRANSACTION_FEE_PER_100+1;
+        if(fee < GlobalSetting.TransactionConstant.MIN_TRANSACTION_FEE){
+            fee =  GlobalSetting.TransactionConstant.MIN_TRANSACTION_FEE;
+        }
+        return fee;
+    }
+
+    /**
+     * 交易输入必须要大于交易输出
+     */
+    public static boolean isTransactionInputsGreatEqualThanOutputsRight(Transaction transaction) {
+        long inputsValue = TransactionTool.getInputsValue(transaction);
+        long outputsValue = TransactionTool.getOutputsValue(transaction);
+        if(inputsValue < outputsValue) {
+            logger.debug("交易校验失败：交易的输入必须大于等于交易的输出。不合法的交易。");
+            return false;
         }
         return true;
     }

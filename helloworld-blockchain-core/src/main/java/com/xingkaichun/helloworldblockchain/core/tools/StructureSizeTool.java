@@ -51,13 +51,12 @@ public class StructureSizeTool {
         }
 
         //校验区块中的交易占用的存储空间
-        //校验区块中交易的数量
-        long transactionCount = BlockTool.getTransactionCount(block);
-        if(transactionCount > GlobalSetting.BlockConstant.BLOCK_MAX_TRANSACTION_SIZE){
-            logger.debug(String.format("区块数据异常，区块里包含的交易数量超过限制值%d。",
-                    GlobalSetting.BlockConstant.BLOCK_MAX_TRANSACTION_SIZE));
+        long blockTextSize = calculateBlockTextSize(block);
+        if(blockTextSize < GlobalSetting.BlockConstant.BLOCK_TEXT_MAX_SIZE){
+            logger.debug(String.format("区块数据异常，区块容量超过限制。"));
             return false;
         }
+
         List<Transaction> transactions = block.getTransactions();
         //校验交易的大小
         if(transactions != null){
@@ -139,10 +138,20 @@ public class StructureSizeTool {
 
 
     //region 计算文本大小
-    /**
-     * 计算脚本长度
-     */
-    private static long calculateTransactionTextSize(Transaction transaction) {
+    private static long calculateBlockTextSize(Block block) {
+        long size = 0;
+        long timestamp = block.getTimestamp();
+        size += String.valueOf(timestamp).length();
+
+        List<Transaction> transactions = block.getTransactions();
+        for(Transaction transaction:transactions){
+            size += calculateTransactionTextSize(transaction);
+        }
+
+        size += calculateLongTextSize(block.getNonce());
+        return size;
+    }
+    public static long calculateTransactionTextSize(Transaction transaction) {
         long size = 0;
         long timestamp = transaction.getTimestamp();
         size += String.valueOf(timestamp).length();
@@ -218,6 +227,12 @@ public class StructureSizeTool {
         List<Transaction> transactions = block.getTransactions();
         if(transactions == null || transactions.size()==0){
             logger.debug("区块数据异常：区块中的交易数量为0。区块必须有一笔CoinBase的交易。");
+            return false;
+        }
+        //校验区块中交易的数量
+        long transactionCount = BlockTool.getTransactionCount(block);
+        if(transactionCount > GlobalSetting.BlockConstant.BLOCK_MAX_TRANSACTION_COUNT){
+            logger.debug(String.format("区块数据异常，区块里包含的交易数量超过限制。"));
             return false;
         }
         for(int i=0; i<transactions.size(); i++){
