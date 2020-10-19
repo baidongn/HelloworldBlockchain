@@ -181,6 +181,7 @@ public class MinerDefaultImpl extends Miner {
 
     @Override
     public Transaction buildMineAwardTransaction(BlockChainDataBase blockChainDataBase, Block block) {
+        //TODO 交易哈希相同问题 每次创建新的账户  每次交易也创建新的账户
         Transaction transaction = new Transaction();
         transaction.setTransactionType(TransactionType.COINBASE);
         transaction.setInputs(null);
