@@ -13,10 +13,7 @@ import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionTy
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.BlockDTO;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionDTO;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionInputDTO;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionOutputDTO;
+import com.xingkaichun.helloworldblockchain.netcore.transport.dto.*;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 
 import java.util.ArrayList;
@@ -101,8 +98,10 @@ public class NodeTransportDtoTool {
         List<TransactionInputDTO> transactionInputDtoList = transactionDTO.getInputs();
         if(transactionInputDtoList != null){
             for (TransactionInputDTO transactionInputDTO:transactionInputDtoList){
+/*                UnspendTransactionOutputDto unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDto();
                 String unspendTransactionOutputHash = transactionInputDTO.getUnspendTransactionOutputHash();
-                TransactionOutput transactionOutput = blockChainDataBase.queryUnspendTransactionOutputByTransactionOutputHash(unspendTransactionOutputHash);
+                TransactionOutput transactionOutput = blockChainDataBase.queryUnspendTransactionOutputByTransactionOutputHash(unspendTransactionOutputHash);*/
+                TransactionOutput transactionOutput = null;
                 if(transactionOutput == null){
                     throw new ClassCastException("TransactionOutput不应该是null。");
                 }
@@ -165,9 +164,10 @@ public class NodeTransportDtoTool {
         List<TransactionInput> transactionInputList = transaction.getInputs();
         if(transactionInputList!=null){
             for (TransactionInput transactionInput:transactionInputList){
-                TransactionOutput unspendTransactionOutput = transactionInput.getUnspendTransactionOutput();
+                UnspendTransactionOutputDto unspendTransactionOutputDto = transactionOutput2UnspendTransactionOutputDto(transactionInput.getUnspendTransactionOutput());
+
                 TransactionInputDTO transactionInputDTO = new TransactionInputDTO();
-                transactionInputDTO.setUnspendTransactionOutputHash(unspendTransactionOutput.getTransactionOutputHash());
+                transactionInputDTO.setUnspendTransactionOutputDto(unspendTransactionOutputDto);
                 transactionInputDTO.setScriptKey(transactionInput.getScriptKey());
                 inputs.add(transactionInputDTO);
             }
@@ -177,7 +177,7 @@ public class NodeTransportDtoTool {
         List<TransactionOutput> transactionOutputList = transaction.getOutputs();
         if(transactionOutputList!=null){
             for(TransactionOutput transactionOutput:transactionOutputList){
-                TransactionOutputDTO transactionOutputDTO = classCast(transactionOutput);
+                TransactionOutputDTO transactionOutputDTO = transactionOutput2TransactionOutputDTO(transactionOutput);
                 outputs.add(transactionOutputDTO);
             }
         }
@@ -202,17 +202,24 @@ public class NodeTransportDtoTool {
         transactionOutput.setScriptLock(scriptLockFrom(transactionOutputDTO.getScriptLock()));
         return transactionOutput;
     }
-
     /**
      * 类型转换
      */
-    public static TransactionOutputDTO classCast(TransactionOutput transactionOutput) {
+    public static TransactionOutputDTO transactionOutput2TransactionOutputDTO(TransactionOutput transactionOutput) {
         TransactionOutputDTO transactionOutputDTO = new TransactionOutputDTO();
         transactionOutputDTO.setValue(transactionOutput.getValue());
         transactionOutputDTO.setScriptLock(transactionOutput.getScriptLock());
         return transactionOutputDTO;
     }
-
+    /**
+     * 类型转换
+     */
+    public static UnspendTransactionOutputDto transactionOutput2UnspendTransactionOutputDto(TransactionOutput transactionOutput) {
+        UnspendTransactionOutputDto unspendTransactionOutputDto = new UnspendTransactionOutputDto();
+        unspendTransactionOutputDto.setTransactionHash(transactionOutput.getTransactionHash());
+        unspendTransactionOutputDto.setTransactionOutputIndex(transactionOutput.getTransactionOutputSequence());
+        return unspendTransactionOutputDto;
+    }
     /**
      * 交易签名
      */

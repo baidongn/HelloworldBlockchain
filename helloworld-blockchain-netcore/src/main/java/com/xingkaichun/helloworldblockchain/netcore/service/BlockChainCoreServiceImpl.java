@@ -17,10 +17,7 @@ import com.xingkaichun.helloworldblockchain.netcore.dto.common.page.PageConditio
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.NodeDto;
 import com.xingkaichun.helloworldblockchain.netcore.dto.transaction.NormalTransactionDto;
 import com.xingkaichun.helloworldblockchain.netcore.dto.transaction.SubmitNormalTransactionResultDto;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.BlockDTO;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionDTO;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionInputDTO;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionOutputDTO;
+import com.xingkaichun.helloworldblockchain.netcore.transport.dto.*;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 
 import java.util.ArrayList;
@@ -105,6 +102,7 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
     }
 
     private TransactionDTO classCast(NormalTransactionDto normalTransactionDto) {
+        //TODO 从钱包拿
         Account account = AccountUtil.accountFromPrivateKey(normalTransactionDto.getPrivateKey());
 
         List<NormalTransactionDto.Output> outputs = normalTransactionDto.getOutputs();
@@ -125,14 +123,14 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
 
         List<TransactionOutput> utxoList = blockChainCore.getBlockChainDataBase().queryUnspendTransactionOutputListByAddress(account.getAddress(),0,100);
         //交易输入列表
-        List<String> inputs = new ArrayList<>();
+        List<TransactionOutput> inputs = new ArrayList<>();
         //交易输入总金额
         long inputValues = 0;
         boolean haveMoreMoneyToPay = false;
         for(TransactionOutput transactionOutput:utxoList){
             inputValues += transactionOutput.getValue();
             //交易输入
-            inputs.add(transactionOutput.getTransactionOutputHash());
+            inputs.add(transactionOutput);
             if(inputValues >= values){
                 haveMoreMoneyToPay = true;
                 break;
@@ -152,9 +150,10 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
 
 
         List<TransactionInputDTO> transactionInputDtoList = new ArrayList<>();
-        for(String input:inputs){
+        for(TransactionOutput input:inputs){
+            UnspendTransactionOutputDto unspendTransactionOutputDto = NodeTransportDtoTool.transactionOutput2UnspendTransactionOutputDto(input);
             TransactionInputDTO transactionInputDTO = new TransactionInputDTO();
-            transactionInputDTO.setUnspendTransactionOutputHash(input);
+            transactionInputDTO.setUnspendTransactionOutputDto(unspendTransactionOutputDto);
             transactionInputDtoList.add(transactionInputDTO);
         }
 

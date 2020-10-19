@@ -15,6 +15,7 @@ import com.xingkaichun.helloworldblockchain.crypto.SHA256Util;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionDTO;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionInputDTO;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionOutputDTO;
+import com.xingkaichun.helloworldblockchain.netcore.transport.dto.UnspendTransactionOutputDto;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,22 +135,22 @@ public class TransactionTool {
      * 字节型脚本
      */
     public static byte[] bytesTransaction(TransactionDTO transactionDTO) {
-        List<byte[]> bytesTransactionInputHashList = new ArrayList<>();
+        List<byte[]> bytesTransactionInputList = new ArrayList<>();
         List<TransactionInputDTO> inputs = transactionDTO.getInputs();
         if(inputs != null && inputs.size()!=0){
             for(TransactionInputDTO transactionInputDTO:inputs){
-                byte[] bytesTransactionInputHash = HexUtil.hexStringToBytes(transactionInputDTO.getUnspendTransactionOutputHash());
-                bytesTransactionInputHashList.add(bytesTransactionInputHash);
+                byte[] bytesTransactionInput = bytesTransactionInput(transactionInputDTO);
+                bytesTransactionInputList.add(bytesTransactionInput);
             }
         }
         List<byte[]> bytesTransactionOutputList = new ArrayList<>();
         List<TransactionOutputDTO> outputs = transactionDTO.getOutputs();
         for(TransactionOutputDTO transactionOutputDTO:outputs){
-            byte[] bytesTransactionOutput = bytesTransactionOutput(transactionOutputDTO.getValue(),transactionOutputDTO.getScriptLock());
+            byte[] bytesTransactionOutput = bytesTransactionOutput(transactionOutputDTO);
             bytesTransactionOutputList.add(bytesTransactionOutput);
         }
 
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionInputHashList),
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionInputList),
                 ByteUtil.concatLengthBytes(bytesTransactionOutputList));
         return data;
     }
@@ -247,9 +248,42 @@ public class TransactionTool {
     }
 
     /**
+     * 字节型交易输入
+     */
+    private static byte[] bytesTransactionInput(TransactionInputDTO transactionInputDTO) {
+        UnspendTransactionOutputDto unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDto();
+        List<String> scriptKey = transactionInputDTO.getScriptKey();
+
+        byte[] bytesUnspendTransactionOutput = bytesUnspendTransactionOutput(unspendTransactionOutputDto);
+        byte[] bytesScriptKey = ScriptTool.bytesScript(scriptKey);
+
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesUnspendTransactionOutput),
+                ByteUtil.concatLengthBytes(bytesScriptKey));
+        return data;
+    }
+
+    /**
+     * 字节型交易输入
+     */
+    private static byte[] bytesUnspendTransactionOutput(UnspendTransactionOutputDto unspendTransactionOutputDto) {
+        String transactionHash = unspendTransactionOutputDto.getTransactionHash();
+        long transactionOutputIndex = unspendTransactionOutputDto.getTransactionOutputIndex();
+
+        byte[] bytesTransactionHash = HexUtil.hexStringToBytes(transactionHash);
+        byte[] bytesTransactionOutputIndex = ByteUtil.longToBytes8(transactionOutputIndex);
+
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionHash),
+                ByteUtil.concatLengthBytes(bytesTransactionOutputIndex));
+        return data;
+    }
+
+    /**
      * 字节型交易输出
      */
-    public static byte[] bytesTransactionOutput(long value, List<String> scriptLock) {
+    public static byte[] bytesTransactionOutput(TransactionOutputDTO transactionOutputDTO) {
+        long value = transactionOutputDTO.getValue();
+        List<String> scriptLock = transactionOutputDTO.getScriptLock();
+
         byte[] bytesValue = ByteUtil.longToBytes8(value);
         byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
 
