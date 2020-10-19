@@ -125,7 +125,6 @@ public class NodeTransportDtoTool {
         }
 
         Transaction transaction = new Transaction();
-        transaction.setTimestamp(transactionDTO.getTimestamp());
         TransactionType transactionType = transactionTypeFromTransactionDTO(transactionDTO);
         transaction.setTransactionType(transactionType);
         transaction.setTransactionHash(TransactionTool.calculateTransactionHash(transactionDTO));
@@ -184,7 +183,6 @@ public class NodeTransportDtoTool {
         }
 
         TransactionDTO transactionDTO = new TransactionDTO();
-        transactionDTO.setTimestamp(transaction.getTimestamp());
         transactionDTO.setInputs(inputs);
         transactionDTO.setOutputs(outputs);
         return transactionDTO;

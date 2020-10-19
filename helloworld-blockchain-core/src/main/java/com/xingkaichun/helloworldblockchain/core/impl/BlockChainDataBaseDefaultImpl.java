@@ -198,17 +198,12 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         }
 
         //校验交易的属性是否与计算得来的一致
-        if(!TransactionPropertyTool.isWritePropertiesRight(block,transaction)){
+        if(!TransactionPropertyTool.isWritePropertiesRight(transaction)){
             return false;
         }
 
 
         //业务校验
-        //校验交易时间
-        if(!BlockTool.isTransactionTimestampLegal(block,transaction)){
-            logger.debug("请校验交易的时间");
-            return false;
-        }
         //校验交易金额
         if(!TransactionTool.isTransactionAmountLegal(transaction)){
             logger.debug("交易金额不合法");

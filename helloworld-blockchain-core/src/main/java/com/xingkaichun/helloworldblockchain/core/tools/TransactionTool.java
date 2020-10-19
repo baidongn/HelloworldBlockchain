@@ -134,9 +134,6 @@ public class TransactionTool {
      * 字节型脚本
      */
     public static byte[] bytesTransaction(TransactionDTO transactionDTO) {
-        long timestamp = transactionDTO.getTimestamp();
-        byte[] bytesTimestamp = ByteUtil.longToBytes8(timestamp);
-
         List<byte[]> bytesTransactionInputHashList = new ArrayList<>();
         List<TransactionInputDTO> inputs = transactionDTO.getInputs();
         if(inputs != null && inputs.size()!=0){
@@ -152,8 +149,7 @@ public class TransactionTool {
             bytesTransactionOutputList.add(bytesTransactionOutput);
         }
 
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTimestamp),
-                ByteUtil.concatLengthBytes(bytesTransactionInputHashList),
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionInputHashList),
                 ByteUtil.concatLengthBytes(bytesTransactionOutputList));
         return data;
     }

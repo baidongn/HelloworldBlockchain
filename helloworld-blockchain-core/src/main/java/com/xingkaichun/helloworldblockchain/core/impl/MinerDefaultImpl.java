@@ -180,9 +180,8 @@ public class MinerDefaultImpl extends Miner {
     }
 
     @Override
-    public Transaction buildMineAwardTransaction(long timestamp, BlockChainDataBase blockChainDataBase, Block block) {
+    public Transaction buildMineAwardTransaction(BlockChainDataBase blockChainDataBase, Block block) {
         Transaction transaction = new Transaction();
-        transaction.setTimestamp(timestamp);
         transaction.setTransactionType(TransactionType.COINBASE);
         transaction.setInputs(null);
 
@@ -223,7 +222,7 @@ public class MinerDefaultImpl extends Miner {
         nonNonceBlock.setTransactions(packingTransactionList);
 
         //创建挖矿奖励交易
-        Transaction mineAwardTransaction =  buildMineAwardTransaction(timestamp,blockChainDataBase,nonNonceBlock);
+        Transaction mineAwardTransaction =  buildMineAwardTransaction(blockChainDataBase,nonNonceBlock);
         packingTransactionList.add(0,mineAwardTransaction);
 
 

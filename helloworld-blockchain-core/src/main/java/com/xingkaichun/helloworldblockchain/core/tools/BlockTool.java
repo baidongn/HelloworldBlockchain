@@ -158,45 +158,6 @@ public class BlockTool {
     }
 
     /**
-     * 交易的时间是否合法
-     */
-    public static boolean isTransactionTimestampLegal(Block block, Transaction transaction) {
-        //校验交易的时间是否合理
-        //交易的时间不能太滞后于当前时间
-        if(transaction.getTimestamp() > System.currentTimeMillis() + GlobalSetting.MinerConstant.TRANSACTION_TIMESTAMP_MAX_AFTER_CURRENT_TIMESTAMP){
-            logger.debug("交易校验失败：交易的时间戳太滞后了。");
-            return false;
-        }
-        //校验交易时间戳
-        if(block != null){
-            //将区块放入区块链的时候，校验交易的逻辑
-            //交易超前 区块生成时间
-            if(transaction.getTimestamp() < block.getTimestamp() - GlobalSetting.MinerConstant.TRANSACTION_TIMESTAMP_MAX_BEFORE_CURRENT_TIMESTAMP){
-                logger.debug("交易校验失败：交易的时间戳太老旧了。");
-                return false;
-            }
-            //交易滞后 区块生成时间
-            if(transaction.getTimestamp() > block.getTimestamp() + GlobalSetting.MinerConstant.TRANSACTION_TIMESTAMP_MAX_AFTER_CURRENT_TIMESTAMP){
-                logger.debug("交易校验失败：交易的时间戳太老旧了。");
-                return false;
-            }
-        }else {
-            //挖矿时，校验交易的逻辑
-            //交易超前 区块生成时间
-            if(transaction.getTimestamp() < System.currentTimeMillis() - GlobalSetting.MinerConstant.TRANSACTION_TIMESTAMP_MAX_BEFORE_CURRENT_TIMESTAMP/2){
-                logger.debug("交易校验失败：交易的时间戳太老旧了。");
-                return false;
-            }
-            //交易滞后 区块生成时间
-            if(transaction.getTimestamp() > System.currentTimeMillis() + GlobalSetting.MinerConstant.TRANSACTION_TIMESTAMP_MAX_AFTER_CURRENT_TIMESTAMP/2){
-                logger.debug("交易校验失败：交易的时间戳太老旧了。");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
      * 校验激励
      */
     public static boolean isIncentiveRight(long targetMinerReward,Block block) {

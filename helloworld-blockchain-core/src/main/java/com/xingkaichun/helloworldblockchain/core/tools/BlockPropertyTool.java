@@ -77,7 +77,7 @@ public class BlockPropertyTool {
             return true;
         }
         for(Transaction transaction:transactions){
-            if(!TransactionPropertyTool.isWritePropertiesRight(block, transaction)){
+            if(!TransactionPropertyTool.isWritePropertiesRight(transaction)){
                 return false;
             }
         }

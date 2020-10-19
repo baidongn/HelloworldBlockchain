@@ -105,8 +105,6 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
     }
 
     private TransactionDTO classCast(NormalTransactionDto normalTransactionDto) {
-        long currentTimeMillis = System.currentTimeMillis();
-
         Account account = AccountUtil.accountFromPrivateKey(normalTransactionDto.getPrivateKey());
 
         List<NormalTransactionDto.Output> outputs = normalTransactionDto.getOutputs();
@@ -163,7 +161,6 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
 
 
         TransactionDTO transactionDTO = new TransactionDTO();
-        transactionDTO.setTimestamp(currentTimeMillis);
         transactionDTO.setInputs(transactionInputDtoList);
         transactionDTO.setOutputs(transactionOutputDtoList);
 

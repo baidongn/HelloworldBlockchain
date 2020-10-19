@@ -74,19 +74,8 @@ public class StructureSizeTool {
      * 校验交易的存储容量是否合法：用来限制交易的所占存储空间的大小。
      */
     public static boolean isTransactionStorageCapacityLegal(Transaction transaction) {
-        long timestamp = transaction.getTimestamp();
         List<TransactionInput> inputs = transaction.getInputs();
         List<TransactionOutput> outputs = transaction.getOutputs();
-
-        //校验时间的长度
-        if(String.valueOf(timestamp).length() < GlobalSetting.TransactionConstant.TRANSACTION_TEXT_TIMESTAMP_MIN_SIZE){
-            logger.debug("交易校验失败：交易时间戳所占存储空间过小。");
-            return false;
-        }
-        if(String.valueOf(timestamp).length() > GlobalSetting.TransactionConstant.TRANSACTION_TEXT_TIMESTAMP_MAX_SIZE){
-            logger.debug("交易校验失败：交易时间戳所占存储空间过大。");
-            return false;
-        }
 
         //校验交易输入
         if(inputs != null){
@@ -153,8 +142,6 @@ public class StructureSizeTool {
     }
     public static long calculateTransactionTextSize(Transaction transaction) {
         long size = 0;
-        long timestamp = transaction.getTimestamp();
-        size += String.valueOf(timestamp).length();
         List<TransactionInput> inputs = transaction.getInputs();
         size += calculateTransactionInputTextSize(inputs);
         List<TransactionOutput> outputs = transaction.getOutputs();

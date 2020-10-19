@@ -23,8 +23,8 @@ public class TransactionPropertyTool {
     /**
      * 校验交易的属性是否与计算得来的一致
      */
-    public static boolean isWritePropertiesRight(Block block, Transaction transaction) {
-        if(!isTransactionTimestampRight(block,transaction)){
+    public static boolean isWritePropertiesRight(Transaction transaction) {
+        if(!isTransactionTimestampRight(transaction)){
             return false;
         }
         if(!isTransactionHashRight(transaction)){
@@ -45,13 +45,9 @@ public class TransactionPropertyTool {
     /**
      * 交易的时间戳是否正确
      */
-    public static boolean isTransactionTimestampRight(Block block, Transaction transaction) {
+    public static boolean isTransactionTimestampRight(Transaction transaction) {
         if(transaction.getTransactionType() == TransactionType.COINBASE){
-            //校验：COINBASE交易时间戳是否与区块时间戳相同
-            if(transaction.getTimestamp() != block.getTimestamp()){
-                logger.debug("COINBASE交易时间戳与区块时间戳不一致");
-                return false;
-            }
+
         }else if(transaction.getTransactionType() == TransactionType.NORMAL){
 
         }else {
