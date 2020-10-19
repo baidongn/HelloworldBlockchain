@@ -35,7 +35,7 @@ public class TransactionPropertyTool {
             return true;
         }
         for(TransactionOutput transactionOutput:outputs){
-            if(!isTransactionOutputHashRight(transaction,transactionOutput)){
+            if(!isTransactionOutputHashRight(transactionOutput)){
                 return false;
             }
         }
@@ -72,8 +72,8 @@ public class TransactionPropertyTool {
     /**
      * 校验交易输出的哈希是否正确
      */
-    public static boolean isTransactionOutputHashRight(Transaction transaction,TransactionOutput output) {
-        String targetTransactionOutputHash = TransactionTool.calculateTransactionOutputHash(transaction,output);
+    public static boolean isTransactionOutputHashRight(TransactionOutput output) {
+        String targetTransactionOutputHash = TransactionTool.calculateTransactionOutputHash(output);
         return StringUtil.isEquals(targetTransactionOutputHash,output.getTransactionOutputHash());
     }
 }

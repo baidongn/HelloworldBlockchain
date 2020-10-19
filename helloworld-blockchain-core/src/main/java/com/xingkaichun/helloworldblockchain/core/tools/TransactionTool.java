@@ -161,22 +161,22 @@ public class TransactionTool {
     /**
      * 计算交易输出哈希
      */
-    public static String calculateTransactionOutputHash(Transaction transaction,TransactionOutput output) {
-        return calculateTransactionOutputHash(transaction.getTimestamp(),output.getTransactionOutputSequence(),output.getValue(),output.getScriptLock());
+    public static String calculateTransactionOutputHash(TransactionOutput output) {
+        return calculateTransactionOutputHash(output.getTransactionOutputSequence(),output.getValue(),output.getScriptLock());
     }
 
     /**
      * 计算交易输出哈希
      */
-    public static String calculateTransactionOutputHash(long timestamp, long transactionOutputSequence, TransactionOutputDTO transactionOutputDTO) {
-        return calculateTransactionOutputHash(timestamp,transactionOutputSequence,transactionOutputDTO.getValue(),transactionOutputDTO.getScriptLock());
+    public static String calculateTransactionOutputHash(long transactionOutputSequence, TransactionOutputDTO transactionOutputDTO) {
+        return calculateTransactionOutputHash(transactionOutputSequence,transactionOutputDTO.getValue(),transactionOutputDTO.getScriptLock());
     }
 
     /**
      * 计算交易输出哈希
      */
-    private static String calculateTransactionOutputHash(long currentTimeMillis, long transactionOutputSequence, long value, List<String> scriptLock) {
-        byte[] data = bytesTransactionOutput(currentTimeMillis,transactionOutputSequence,value,scriptLock);
+    private static String calculateTransactionOutputHash(long transactionOutputSequence, long value, List<String> scriptLock) {
+        byte[] data = bytesTransactionOutput(transactionOutputSequence,value,scriptLock);
         byte[] sha256Digest = SHA256Util.digest(data);
         return HexUtil.bytesToHexString(sha256Digest);
     }
@@ -262,16 +262,14 @@ public class TransactionTool {
         return data;
     }
     /**
-     * 字节型交易输出
+     * 字节型交易输出 TODO 需要加交易输出哈希
      */
-    public static byte[] bytesTransactionOutput(long currentTimeMillis, long transactionOutputSequence, long value, List<String> scriptLock) {
-        byte[] bytesCurrentTimeMillis = ByteUtil.longToBytes8(currentTimeMillis);
+    public static byte[] bytesTransactionOutput(long transactionOutputSequence, long value, List<String> scriptLock) {
         byte[] bytesTransactionOutputSequence = ByteUtil.longToBytes8(transactionOutputSequence);
         byte[] bytesValue = ByteUtil.longToBytes8(value);
         byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
 
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesCurrentTimeMillis),
-                ByteUtil.concatLengthBytes(bytesTransactionOutputSequence),
+        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionOutputSequence),
                 ByteUtil.concatLengthBytes(bytesValue),
                 ByteUtil.concatLengthBytes(bytesScriptLock));
         return data;

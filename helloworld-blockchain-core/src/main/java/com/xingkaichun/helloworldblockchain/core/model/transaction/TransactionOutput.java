@@ -13,11 +13,6 @@ import java.io.Serializable;
 public class TransactionOutput implements Serializable {
 
     /**
-     * 交易时间戳
-     * 冗余 可以从com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction类timestamp字段获取
-     */
-    private long timestamp;
-    /**
      * 交易输出的Hash是交易输出的摘要。交易输出的哈希确定了，具体的交易输出也就确定了。
      *
      * 区块链系统不允许同一个[交易输出的Hash]被使用两次或是两次以上。
@@ -69,14 +64,6 @@ public class TransactionOutput implements Serializable {
 
 
     //region get set
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
 
     public String getTransactionOutputHash() {
         return transactionOutputHash;

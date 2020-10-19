@@ -119,7 +119,7 @@ public class NodeTransportDtoTool {
             long transactionOutputSequence = 0;
             for(TransactionOutputDTO transactionOutputDTO:dtoOutputs){
                 transactionOutputSequence++;
-                TransactionOutput transactionOutput = classCast(transactionDTO.getTimestamp(),transactionOutputSequence,transactionOutputDTO);
+                TransactionOutput transactionOutput = classCast(transactionOutputSequence,transactionOutputDTO);
                 outputs.add(transactionOutput);
             }
         }
@@ -193,15 +193,14 @@ public class NodeTransportDtoTool {
     /**
      * 类型转换
      */
-    public static TransactionOutput classCast(long timestamp, long transactionOutputSequence, TransactionOutputDTO transactionOutputDTO) {
+    public static TransactionOutput classCast(long transactionOutputSequence, TransactionOutputDTO transactionOutputDTO) {
         TransactionOutput transactionOutput = new TransactionOutput();
         transactionOutput.setTransactionOutputSequence(transactionOutputSequence);
         String publicKeyHash = StackBasedVirtualMachine.getPublicKeyHashByPayToPublicKeyHashOutputScript(transactionOutputDTO.getScriptLock());
         String address = AccountUtil.addressFromPublicKeyHash(publicKeyHash);
         transactionOutput.setAddress(address);
         transactionOutput.setValue(transactionOutputDTO.getValue());
-        transactionOutput.setTimestamp(timestamp);
-        transactionOutput.setTransactionOutputHash(TransactionTool.calculateTransactionOutputHash(timestamp,transactionOutputSequence,transactionOutputDTO));
+        transactionOutput.setTransactionOutputHash(TransactionTool.calculateTransactionOutputHash(transactionOutputSequence,transactionOutputDTO));
         transactionOutput.setScriptLock(scriptLockFrom(transactionOutputDTO.getScriptLock()));
         return transactionOutput;
     }

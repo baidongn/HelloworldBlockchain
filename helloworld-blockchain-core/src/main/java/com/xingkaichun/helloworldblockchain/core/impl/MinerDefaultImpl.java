@@ -191,11 +191,10 @@ public class MinerDefaultImpl extends Miner {
 
         TransactionOutput output = new TransactionOutput();
         output.setTransactionOutputSequence(1);
-        output.setTimestamp(timestamp);
         output.setAddress(minerAddress);
         output.setValue(award);
         output.setScriptLock(StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(minerAddress));
-        output.setTransactionOutputHash(TransactionTool.calculateTransactionOutputHash(transaction,output));
+        output.setTransactionOutputHash(TransactionTool.calculateTransactionOutputHash(output));
         outputs.add(output);
 
         transaction.setOutputs(outputs);
