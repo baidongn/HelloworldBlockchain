@@ -23,8 +23,12 @@ public class TransactionOutput implements Serializable {
      *
      * 这个字段也可以用来表示一张独一无二编号的支票
      * 还有另外一个独一无二的编号，区块高度+交易在区块中的编号+交易输出在交易中编号，这个编号有个缺点，只能在区块完全确定后，才能确定这个编号
+     * TODO ID
      */
     private String transactionOutputHash;
+
+
+
 
     //交易输出的金额
     private long value;
@@ -59,7 +63,8 @@ public class TransactionOutput implements Serializable {
      * 在这个交易中的的排序号
      */
     private long transactionOutputSequence;
-
+    //TODO
+    private String transactionHash;
 
 
 
@@ -119,6 +124,14 @@ public class TransactionOutput implements Serializable {
 
     public void setTransactionOutputSequence(long transactionOutputSequence) {
         this.transactionOutputSequence = transactionOutputSequence;
+    }
+
+    public String getTransactionHash() {
+        return transactionHash;
+    }
+
+    public void setTransactionHash(String transactionHash) {
+        this.transactionHash = transactionHash;
     }
 
     //endregion

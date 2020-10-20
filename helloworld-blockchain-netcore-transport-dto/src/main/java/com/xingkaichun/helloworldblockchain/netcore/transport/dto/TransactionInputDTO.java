@@ -11,8 +11,9 @@ import java.util.List;
  */
 public class TransactionInputDTO implements Serializable {
 
-    //交易的输入
-    private String unspendTransactionOutputHash;
+    //未花费输出
+    private UnspendTransactionOutputDto unspendTransactionOutputDto;
+
     //脚本钥匙
     private List<String> scriptKey;
 
@@ -21,12 +22,12 @@ public class TransactionInputDTO implements Serializable {
 
     //region get set
 
-    public String getUnspendTransactionOutputHash() {
-        return unspendTransactionOutputHash;
+    public UnspendTransactionOutputDto getUnspendTransactionOutputDto() {
+        return unspendTransactionOutputDto;
     }
 
-    public void setUnspendTransactionOutputHash(String unspendTransactionOutputHash) {
-        this.unspendTransactionOutputHash = unspendTransactionOutputHash;
+    public void setUnspendTransactionOutputDto(UnspendTransactionOutputDto unspendTransactionOutputDto) {
+        this.unspendTransactionOutputDto = unspendTransactionOutputDto;
     }
 
     public List<String> getScriptKey() {
