@@ -6,10 +6,7 @@ import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptKey;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptLock;
 import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlockDTO;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionInput;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionType;
+import com.xingkaichun.helloworldblockchain.core.model.transaction.*;
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
@@ -101,12 +98,12 @@ public class NodeTransportDtoTool {
 /*                UnspendTransactionOutputDto unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDto();
                 String unspendTransactionOutputHash = transactionInputDTO.getUnspendTransactionOutputHash();
                 TransactionOutput transactionOutput = blockChainDataBase.queryUnspendTransactionOutputByTransactionOutputHash(unspendTransactionOutputHash);*/
-                TransactionOutput transactionOutput = null;
-                if(transactionOutput == null){
+                UnspendTransactionOutput unspendTransactionOutput = null;
+                if(unspendTransactionOutput == null){
                     throw new ClassCastException("TransactionOutput不应该是null。");
                 }
                 TransactionInput transactionInput = new TransactionInput();
-                transactionInput.setUnspendTransactionOutput(transactionOutput);
+                transactionInput.setUnspendTransactionOutput(unspendTransactionOutput);
                 transactionInput.setScriptKey(scriptKeyFrom(transactionInputDTO.getScriptKey()));
                 inputs.add(transactionInput);
             }
