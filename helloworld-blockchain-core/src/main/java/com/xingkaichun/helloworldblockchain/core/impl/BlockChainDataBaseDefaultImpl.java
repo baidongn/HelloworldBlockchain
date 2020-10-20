@@ -6,10 +6,7 @@ import com.xingkaichun.helloworldblockchain.core.Consensus;
 import com.xingkaichun.helloworldblockchain.core.Incentive;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.enums.BlockChainActionEnum;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionInput;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionType;
+import com.xingkaichun.helloworldblockchain.core.model.transaction.*;
 import com.xingkaichun.helloworldblockchain.core.tools.*;
 import com.xingkaichun.helloworldblockchain.core.utils.EncodeDecodeUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LevelDBUtil;
@@ -345,8 +342,8 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
 
 
     //region 交易输出查询
-    public TransactionOutput queryTransactionOutputByTransactionOutputHash(String transactionOutputHash) {
-        byte[] bytesTransactionOutput = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildTransactionOutputHashToTransactionOutputKey(transactionOutputHash));
+    public TransactionOutput queryTransactionOutputByTransactionOutputId(TransactionOutputId transactionOutputId) {
+        byte[] bytesTransactionOutput = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildTransactionOutputIdToTransactionOutputKey(transactionOutputId));
         if(bytesTransactionOutput == null){
             return null;
         }
@@ -354,8 +351,8 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
     }
 
     @Override
-    public TransactionOutput queryUnspendTransactionOutputByTransactionOutputHash(String unspendTransactionOutputHash) {
-        byte[] bytesUtxo = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildUnspendTransactionOutputHashToUnspendTransactionOutputKey(unspendTransactionOutputHash));
+    public TransactionOutput queryUnspendTransactionOutputByTransactionOutputId(TransactionOutputId transactionOutputId) {
+        byte[] bytesUtxo = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(transactionOutputId));
         if(bytesUtxo == null){
             return null;
         }
@@ -486,11 +483,11 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                     for(TransactionInput txInput:inputs){
                         //存储未花费交易输出哈希到未花费交易输出的映射
                         TransactionOutput unspendTransactionOutput = txInput.getUnspendTransactionOutput();
-                        byte[] unspendTransactionOutputHashToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputHashToUnspendTransactionOutputKey(unspendTransactionOutput.getTransactionOutputHash());
+                        byte[] unspendTransactionOutputIdToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(unspendTransactionOutput);
                         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-                            writeBatch.delete(unspendTransactionOutputHashToUnspendTransactionOutputKey);
+                            writeBatch.delete(unspendTransactionOutputIdToUnspendTransactionOutputKey);
                         } else {
-                            writeBatch.put(unspendTransactionOutputHashToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(unspendTransactionOutput));
+                            writeBatch.put(unspendTransactionOutputIdToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(unspendTransactionOutput));
                         }
                     }
                 }
@@ -498,15 +495,15 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                 if(outputs != null){
                     for(TransactionOutput output:outputs){
                         //存储交易输出哈希到交易输出的映射
-                        byte[] transactionOutputHashToTransactionOutputKey = BlockChainDataBaseKeyTool.buildTransactionOutputHashToTransactionOutputKey(output.getTransactionOutputHash());
+                        byte[] transactionOutputIdToTransactionOutputKey = BlockChainDataBaseKeyTool.buildTransactionOutputIdToTransactionOutputKey(output);
                         //存储未花费交易输出哈希到未花费交易输出的映射
-                        byte[] unspendTransactionOutputHashToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputHashToUnspendTransactionOutputKey(output.getTransactionOutputHash());
+                        byte[] unspendTransactionOutputIdToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(output);
                         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-                            writeBatch.put(transactionOutputHashToTransactionOutputKey, EncodeDecodeUtil.encode(output));
-                            writeBatch.put(unspendTransactionOutputHashToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(output));
+                            writeBatch.put(transactionOutputIdToTransactionOutputKey, EncodeDecodeUtil.encode(output));
+                            writeBatch.put(unspendTransactionOutputIdToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(output));
                         } else {
-                            writeBatch.delete(transactionOutputHashToTransactionOutputKey);
-                            writeBatch.delete(unspendTransactionOutputHashToUnspendTransactionOutputKey);
+                            writeBatch.delete(transactionOutputIdToTransactionOutputKey);
+                            writeBatch.delete(unspendTransactionOutputIdToUnspendTransactionOutputKey);
                         }
                     }
                 }
@@ -533,17 +530,6 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                     writeBatch.put(transactionHashKey, transactionHashKey);
                 } else {
                     writeBatch.delete(transactionHashKey);
-                }
-                List<TransactionOutput> outputs = transaction.getOutputs();
-                if(outputs != null){
-                    for(TransactionOutput output:outputs){
-                        byte[] transactionOutputHashKey = BlockChainDataBaseKeyTool.buildHashKey(output.getTransactionOutputHash());
-                        if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-                            writeBatch.put(transactionOutputHashKey, transactionOutputHashKey);
-                        } else {
-                            writeBatch.delete(transactionOutputHashKey);
-                        }
-                    }
                 }
             }
         }
@@ -577,6 +563,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                     for (int i=0; i <outputs.size(); i++){
                         TransactionOutput transactionOutput = outputs.get(i);
                         transactionOutput.setBlockHeight(blockHeight);
+                        transactionOutput.setTransactionHash(transaction.getTransactionHash());
                         transactionOutput.setTransactionOutputSequence(i+LongUtil.ONE);
                         transactionOutput.setTransactionSequenceNumberInBlock(transaction.getTransactionSequenceNumberInBlock());
                     }
@@ -633,8 +620,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         if(inputs != null){
             for(TransactionInput transactionInput : inputs) {
                 TransactionOutput unspendTransactionOutput = transactionInput.getUnspendTransactionOutput();
-                String unspendTransactionOutputHash = unspendTransactionOutput.getTransactionOutputHash();
-                TransactionOutput transactionOutput = queryUnspendTransactionOutputByTransactionOutputHash(unspendTransactionOutputHash);
+                TransactionOutput transactionOutput = queryUnspendTransactionOutputByTransactionOutputId(unspendTransactionOutput);
                 if(transactionOutput == null){
                     logger.debug("交易数据异常：交易输入不是未花费交易输出。");
                     return false;
@@ -662,17 +648,6 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         if(isHashUsed(transactionHash)){
             logger.debug("交易数据异常，交易Hash已经被使用了。");
             return false;
-        }
-        //交易输出Hash是否已经被使用了
-        List<TransactionOutput> outputs = transaction.getOutputs();
-        if(outputs != null){
-            for(TransactionOutput transactionOutput : outputs) {
-                String transactionOutputHash = transactionOutput.getTransactionOutputHash();
-                if(isHashUsed(transactionOutputHash)){
-                    logger.debug("交易数据异常，交易输出Hash已经被使用了。");
-                    return false;
-                }
-            }
         }
         return true;
     }
@@ -702,11 +677,6 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
      */
     private boolean isNewHashLegal(Transaction transaction) {
         //校验哈希作为主键的正确性
-        //新产生的Hash不能有重复
-        if(!TransactionTool.isExistDuplicateNewHash(transaction)){
-            logger.debug("校验数据异常，校验中占用的部分主键已经被使用了。");
-            return false;
-        }
         //新产生的Hash不能被使用过
         if(!isNewHashUsed(transaction)){
             logger.debug("校验数据异常，校验中占用的部分主键已经被使用了。");

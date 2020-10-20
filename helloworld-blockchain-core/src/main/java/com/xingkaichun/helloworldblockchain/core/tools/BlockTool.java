@@ -82,17 +82,6 @@ public class BlockTool {
             }else {
                 hashSet.add(transactionHash);
             }
-            List<TransactionOutput> outputs = transaction.getOutputs();
-            if(outputs != null){
-                for(TransactionOutput transactionOutput : outputs) {
-                    String transactionOutputHash = transactionOutput.getTransactionOutputHash();
-                    if(hashSet.contains(transactionOutputHash)){
-                        return false;
-                    }else {
-                        hashSet.add(transactionOutputHash);
-                    }
-                }
-            }
         }
         return true;
     }
@@ -101,17 +90,17 @@ public class BlockTool {
      * 是否存在重复的交易输入
      */
     public static boolean isExistDuplicateTransactionInput(Block block) {
-        Set<String> hashSet = new HashSet<>();
+        Set<String> transactionOutputIdSet = new HashSet<>();
         for(Transaction transaction : block.getTransactions()){
             List<TransactionInput> inputs = transaction.getInputs();
             if(inputs != null){
                 for(TransactionInput transactionInput : inputs) {
                     TransactionOutput unspendTransactionOutput = transactionInput.getUnspendTransactionOutput();
-                    String unspendTransactionOutputHash = unspendTransactionOutput.getTransactionOutputHash();
-                    if(hashSet.contains(unspendTransactionOutputHash)){
+                    String transactionOutputId = unspendTransactionOutput.getTransactionOutputId();
+                    if(transactionOutputIdSet.contains(transactionOutputId)){
                         return true;
                     }else {
-                        hashSet.add(unspendTransactionOutputHash);
+                        transactionOutputIdSet.add(transactionOutputId);
                     }
                 }
             }

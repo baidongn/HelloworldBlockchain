@@ -156,30 +156,6 @@ public class TransactionTool {
     }
 
     /**
-     * 计算交易输出哈希
-     */
-    public static String calculateTransactionOutputHash(TransactionOutput output) {
-        return calculateTransactionOutputHash(output.getTransactionOutputSequence(),output.getValue(),output.getScriptLock());
-    }
-
-    /**
-     * 计算交易输出哈希
-     */
-    public static String calculateTransactionOutputHash(long transactionOutputSequence, TransactionOutputDTO transactionOutputDTO) {
-        return calculateTransactionOutputHash(transactionOutputSequence,transactionOutputDTO.getValue(),transactionOutputDTO.getScriptLock());
-    }
-
-    /**
-     * 计算交易输出哈希
-     */
-    private static String calculateTransactionOutputHash(long transactionOutputSequence, long value, List<String> scriptLock) {
-        byte[] data = bytesTransactionOutput(transactionOutputSequence,value,scriptLock);
-        byte[] sha256Digest = SHA256Util.digest(data);
-        return HexUtil.bytesToHexString(sha256Digest);
-    }
-
-
-    /**
      * 交易中的金额是否符合系统的约束
      */
     public static boolean isTransactionAmountLegal(Transaction transaction) {
@@ -291,19 +267,6 @@ public class TransactionTool {
                 ByteUtil.concatLengthBytes(bytesScriptLock));
         return data;
     }
-    /**
-     * 字节型交易输出 TODO 需要加交易输出哈希
-     */
-    public static byte[] bytesTransactionOutput(long transactionOutputSequence, long value, List<String> scriptLock) {
-        byte[] bytesTransactionOutputSequence = ByteUtil.longToBytes8(transactionOutputSequence);
-        byte[] bytesValue = ByteUtil.longToBytes8(value);
-        byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
-
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionOutputSequence),
-                ByteUtil.concatLengthBytes(bytesValue),
-                ByteUtil.concatLengthBytes(bytesScriptLock));
-        return data;
-    }
 
     /**
      * 是否存在重复的交易输入
@@ -313,42 +276,16 @@ public class TransactionTool {
         if(inputs == null || inputs.size()==0){
             return false;
         }
-        Set<String> hashSet = new HashSet<>();
+        Set<String> transactionOutputIdSet = new HashSet<>();
         for(TransactionInput transactionInput : inputs) {
             TransactionOutput unspendTransactionOutput = transactionInput.getUnspendTransactionOutput();
-            String unspendTransactionOutputHash = unspendTransactionOutput.getTransactionOutputHash();
-            if(hashSet.contains(unspendTransactionOutputHash)){
+            String transactionOutputId = unspendTransactionOutput.getTransactionOutputId();
+            if(transactionOutputIdSet.contains(transactionOutputId)){
                 return true;
             }
-            hashSet.add(unspendTransactionOutputHash);
+            transactionOutputIdSet.add(transactionOutputId);
         }
         return false;
-    }
-
-    /**
-     * 交易新产生的哈希是否存在重复
-     */
-    public static boolean isExistDuplicateNewHash(Transaction transaction) {
-        String transactionHash = transaction.getTransactionHash();
-        //校验：只从交易对象层面校验，交易中新产生的哈希是否有重复
-        Set<String> hashSet = new HashSet<>();
-        if(hashSet.contains(transactionHash)){
-            return false;
-        }else {
-            hashSet.add(transactionHash);
-        }
-        List<TransactionOutput> outputs = transaction.getOutputs();
-        if(outputs != null){
-            for(TransactionOutput transactionOutput : outputs) {
-                String transactionOutputHash = transactionOutput.getTransactionOutputHash();
-                if(hashSet.contains(transactionOutputHash)){
-                    return false;
-                }else {
-                    hashSet.add(transactionOutputHash);
-                }
-            }
-        }
-        return true;
     }
 
     /**

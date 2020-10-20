@@ -13,6 +13,8 @@ import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
 import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
 import com.xingkaichun.helloworldblockchain.core.tools.TransactionTool;
 import com.xingkaichun.helloworldblockchain.core.utils.ThreadUtil;
+import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
+import com.xingkaichun.helloworldblockchain.crypto.model.Account;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionDTO;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 import org.slf4j.Logger;
@@ -125,7 +127,7 @@ public class MinerDefaultImpl extends Miner {
         }
         removeExceptionTransaction_PointOfTransactionView(blockChainDataBase,packingTransactionList);
 
-        Set<String> hashSet = new HashSet<>();
+        Set<String> idSet = new HashSet<>();
         Iterator<Transaction> iterator = packingTransactionList.iterator();
         while (iterator.hasNext()){
             Transaction transaction = iterator.next();
@@ -133,23 +135,12 @@ public class MinerDefaultImpl extends Miner {
             boolean isError = false;
             //校验双花：同一张钱不能被两次交易同时使用【同一个UTXO不允许出现在不同的交易中】
             for(TransactionInput input:inputs){
-                String unspendTransactionOutputHash = input.getUnspendTransactionOutput().getTransactionOutputHash();
-                if(hashSet.contains(unspendTransactionOutputHash)){
+                String unspendTransactionOutputId = input.getUnspendTransactionOutput().getTransactionOutputId();
+                if(idSet.contains(unspendTransactionOutputId)){
                     isError = true;
                     break;
                 }else {
-                    hashSet.add(unspendTransactionOutputHash);
-                }
-            }
-            //校验哈希，哈希不能重复使用
-            List<TransactionOutput> outputs = transaction.getOutputs();
-            for(TransactionOutput transactionOutput:outputs){
-                String transactionOutputHash = transactionOutput.getTransactionOutputHash();
-                if(hashSet.contains(transactionOutputHash)){
-                    isError = true;
-                    break;
-                }else {
-                    hashSet.add(transactionOutputHash);
+                    idSet.add(unspendTransactionOutputId);
                 }
             }
             if(isError){
@@ -182,19 +173,18 @@ public class MinerDefaultImpl extends Miner {
     @Override
     public Transaction buildMineAwardTransaction(BlockChainDataBase blockChainDataBase, Block block) {
         //TODO 交易哈希相同问题 每次创建新的账户  每次交易也创建新的账户
+        //TODO dto转换
+        Account account = AccountUtil.randomAccount();
+        String address = account.getAddress();
+
         Transaction transaction = new Transaction();
         transaction.setTransactionType(TransactionType.COINBASE);
-        transaction.setInputs(null);
 
         ArrayList<TransactionOutput> outputs = new ArrayList<>();
-        long award = blockChainDataBase.getIncentive().mineAward(block);
-
         TransactionOutput output = new TransactionOutput();
-        output.setTransactionOutputSequence(1);
-        output.setAddress(minerAddress);
-        output.setValue(award);
-        output.setScriptLock(StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(minerAddress));
-        output.setTransactionOutputHash(TransactionTool.calculateTransactionOutputHash(output));
+        output.setAddress(address);
+        output.setValue(blockChainDataBase.getIncentive().mineAward(block));
+        output.setScriptLock(StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(address));
         outputs.add(output);
 
         transaction.setOutputs(outputs);

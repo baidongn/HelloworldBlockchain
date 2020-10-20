@@ -52,7 +52,7 @@ public class StructureSizeTool {
 
         //校验区块中的交易占用的存储空间
         long blockTextSize = calculateBlockTextSize(block);
-        if(blockTextSize < GlobalSetting.BlockConstant.BLOCK_TEXT_MAX_SIZE){
+        if(blockTextSize > GlobalSetting.BlockConstant.BLOCK_TEXT_MAX_SIZE){
             logger.debug(String.format("区块数据异常，区块容量超过限制。"));
             return false;
         }

@@ -72,7 +72,7 @@ public class GlobalSetting {
         //产生区块的平均时间
         public static final long GENERATE_BLOCK_AVERAGE_TIMESTAMP = 1000 *  60 * 2;
         //初始化产生区块的难度 默认初始难度 4G CPU 约 10分钟挖出区块的难度
-        public static final String INIT_GENERATE_BLOCK_DIFFICULTY_STRING = "2FFF000000000000000000000000000000000000000000000000000000";
+        public static final String INIT_GENERATE_BLOCK_DIFFICULTY_STRING = "2FFFFFF000000000000000000000000000000000000000000000000000000";
         //初始化挖矿激励金额
         public static final long INIT_MINE_BLOCK_INCENTIVE_COIN_AMOUNT = 50L;
         //挖矿激励减产周期
