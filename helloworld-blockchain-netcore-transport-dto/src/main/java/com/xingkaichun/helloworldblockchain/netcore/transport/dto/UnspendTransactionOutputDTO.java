@@ -8,8 +8,9 @@ package com.xingkaichun.helloworldblockchain.netcore.transport.dto;
  */
 public class UnspendTransactionOutputDTO {
 
-    //交易的输入
+    //交易哈希
     private String transactionHash;
+    //交易输出的索引
     private long transactionOutputIndex;
 
     public String getTransactionHash() {

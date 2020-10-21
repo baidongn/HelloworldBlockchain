@@ -103,11 +103,7 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
         return response;
     }
 
-    private TransactionDTO classCast(NormalTransactionDto normalTransactionDto) {
-        //TODO 从钱包拿
-        Account account = AccountUtil.accountFromPrivateKey(normalTransactionDto.getPrivateKey());
-
-        List<NormalTransactionDto.Output> outputs = normalTransactionDto.getOutputs();
+    private TransactionDTO classCast(List<String> privateKeyList,List<NormalTransactionDto.Output> outputs) {
         List<TransactionOutputDTO> transactionOutputDtoList = new ArrayList<>();
         //理应支付总金额
         long values = 0;
@@ -121,28 +117,39 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
                 values += o.getValue();
             }
         }
-        //手续费
+        //手续费 TODO 手续费计算
         values += GlobalSetting.TransactionConstant.MIN_TRANSACTION_FEE;
 
-        List<TransactionOutput> utxoList = blockChainCore.getBlockChainDataBase().queryUnspendTransactionOutputListByAddress(account.getAddress(),0,100);
+        //获取足够的金额
         //交易输入列表
         List<TransactionOutput> inputs = new ArrayList<>();
+        List<String> inputPrivateKeyList = new ArrayList<>();
         //交易输入总金额
         long inputValues = 0;
-        boolean haveMoreMoneyToPay = false;
-        for(TransactionOutput transactionOutput:utxoList){
-            inputValues += transactionOutput.getValue();
-            //交易输入
-            inputs.add(transactionOutput);
-            if(inputValues >= values){
-                haveMoreMoneyToPay = true;
+        boolean haveEnoughMoneyToPay = false;
+        for(String privateKey:privateKeyList){
+            if(haveEnoughMoneyToPay){
                 break;
+            }
+            List<TransactionOutput> utxoList = blockChainCore.getBlockChainDataBase().queryUnspendTransactionOutputListByAddress(privateKey,0,100);
+            for(TransactionOutput transactionOutput:utxoList){
+                inputValues += transactionOutput.getValue();
+                //交易输入
+                inputs.add(transactionOutput);
+                inputPrivateKeyList.add(privateKey);
+                if(inputValues >= values){
+                    haveEnoughMoneyToPay = true;
+                    break;
+                }
             }
         }
 
-        if(!haveMoreMoneyToPay){
+        if(!haveEnoughMoneyToPay){
             throw new ClassCastException("账户没有足够的金额去支付。");
         }else {
+            //创建新的账户
+            Account account = blockChainCore.getMiner().getWallet().createAccount();
+            blockChainCore.getMiner().getWallet().addAccount(account);
             //找零
             long change = inputValues - values;
             TransactionOutputDTO transactionOutputDTO = new TransactionOutputDTO();
@@ -152,7 +159,6 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
             transactionOutputDtoList.add(transactionOutputDTO);
         }
 
-
         List<TransactionInputDTO> transactionInputDtoList = new ArrayList<>();
         for(TransactionOutput input:inputs){
             UnspendTransactionOutputDTO unspendTransactionOutputDto = NodeTransportDtoTool.transactionOutput2UnspendTransactionOutputDto(input);
@@ -161,17 +167,28 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
             transactionInputDtoList.add(transactionInputDTO);
         }
 
-
-
+        //构建交易
         TransactionDTO transactionDTO = new TransactionDTO();
         transactionDTO.setTransactionInputDtoList(transactionInputDtoList);
         transactionDTO.setTransactionOutputDtoList(transactionOutputDtoList);
 
-        for(TransactionInputDTO transactionInputDTO:transactionInputDtoList){
-            String signature = signatureTransactionDTO(transactionDTO, account.getPrivateKey());
+        //签名
+        for(int i=0;i<transactionInputDtoList.size();i++){
+            String privateKey = inputPrivateKeyList.get(i);
+            Account account = AccountUtil.accountFromPrivateKey(privateKey);
+            TransactionInputDTO transactionInputDTO = transactionInputDtoList.get(i);
+            String signature = signatureTransactionDTO(transactionDTO, privateKey);
             ScriptKey scriptKey = StackBasedVirtualMachine.createPayToPublicKeyHashInputScript(signature, account.getPublicKey());
             transactionInputDTO.setScriptKeyDTO(NodeTransportDtoTool.scriptKey2ScriptKeyDTO(scriptKey));
         }
+        return transactionDTO;
+    }
+
+    private TransactionDTO classCast(NormalTransactionDto normalTransactionDto) {
+        String privateKey = normalTransactionDto.getPrivateKey();
+        List<String> privateKeyList = new ArrayList<>();
+        privateKeyList.add(privateKey);
+        TransactionDTO transactionDTO = classCast(privateKeyList,normalTransactionDto.getOutputs());
         return transactionDTO;
     }
 
