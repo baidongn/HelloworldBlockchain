@@ -2,7 +2,7 @@ package com.xingkaichun.helloworldblockchain.node.controller;
 
 import com.google.common.base.Strings;
 import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
-import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
+import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
 import com.xingkaichun.helloworldblockchain.netcore.dto.common.ServiceResult;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationDto;
@@ -172,55 +172,6 @@ public class AdminConsoleController {
         }
     }
 
-    /**
-     * 查询矿工的地址
-     */
-    @ResponseBody
-    @RequestMapping(value = AdminConsoleApiRoute.QUERY_MINER_ADDRESS,method={RequestMethod.GET,RequestMethod.POST})
-    public ServiceResult<QueryMinerAddressResponse> queryMinerAddress(@RequestBody QueryMinerAddressRequest request){
-        try {
-            ConfigurationDto minerAddressConfigurationDto =  configurationService.getConfigurationByConfigurationKey(ConfigurationEnum.MINER_ADDRESS.name());
-            QueryMinerAddressResponse response = new QueryMinerAddressResponse();
-            response.setMinerAddress(minerAddressConfigurationDto.getConfValue());
-
-            Account defaultMinerAccount = configurationService.getDefaultMinerAccount();
-            response.setDefaultMinerAccount(defaultMinerAccount);
-            return ServiceResult.createSuccessServiceResult("查询矿工的地址成功",response);
-        } catch (Exception e){
-            String message = "查询矿工的地址失败";
-            logger.error(message,e);
-            return ServiceResult.createFailServiceResult(message);
-        }
-    }
-
-    /**
-     * 设置矿工地址
-     */
-    @ResponseBody
-    @RequestMapping(value = AdminConsoleApiRoute.SET_MINER_ADDRESS,method={RequestMethod.GET,RequestMethod.POST})
-    public ServiceResult<SetMinerAddressResponse> setMinerAddress(@RequestBody SetMinerAddressRequest request){
-        try {
-            if(blockChainCore.getMiner().isActive()){
-                return ServiceResult.createFailServiceResult("矿工正在挖矿，请先暂停挖矿，再设置矿工账户地址");
-            }
-            String minerAddress = request.getMinerAddress();
-            if(StringUtil.isEmpty(minerAddress)){
-                return ServiceResult.createFailServiceResult("请输入矿工地址");
-            }
-            blockChainCore.getMiner().resetMinerAddress(minerAddress);
-            ConfigurationDto configurationDto = new ConfigurationDto();
-            configurationDto.setConfKey(ConfigurationEnum.MINER_ADDRESS.name());
-            configurationDto.setConfValue(minerAddress);
-            configurationService.setConfiguration(configurationDto);
-            SetMinerAddressResponse response = new SetMinerAddressResponse();
-            return ServiceResult.createSuccessServiceResult("成功重置矿工账户地址！",response);
-        } catch (Exception e){
-            String message = "重置矿工的地址失败";
-            logger.error(message,e);
-            return ServiceResult.createFailServiceResult(message);
-        }
-    }
-
 
     /**
      * 新增节点
@@ -356,6 +307,92 @@ public class AdminConsoleController {
             }
             blockChainCoreService.removeBlocksUtilBlockHeightLessThan(request.getBlockHeight());
             RemoveBlockResponse response = new RemoveBlockResponse();
+            return ServiceResult.createSuccessServiceResult("删除区块成功",response);
+        } catch (Exception e){
+            String message = "删除区块失败";
+            logger.error(message,e);
+            return ServiceResult.createFailServiceResult(message);
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = AdminConsoleApiRoute.ADD_ACCOUNT,method={RequestMethod.GET,RequestMethod.POST})
+    public ServiceResult<AddAccountResponse> addAccount(@RequestBody AddAccountRequest request){
+        try {
+            Account account = request.getAccount();
+            if(account == null){
+                return ServiceResult.createFailServiceResult("账户不能为空。");
+            }
+            String privateKey = account.getPrivateKey();
+            if(Strings.isNullOrEmpty(privateKey)){
+                return ServiceResult.createFailServiceResult("账户私钥不能为空。");
+            }
+            String publicKey = account.getPublicKey();
+            if(!Strings.isNullOrEmpty(publicKey)){
+                return ServiceResult.createFailServiceResult("账户公钥由私钥计算得出，不需要填写。");
+            }
+            String address = account.getAddress();
+            if(!Strings.isNullOrEmpty(address)){
+                return ServiceResult.createFailServiceResult("账户地址由私钥计算得出，不需要填写。");
+            }
+
+            Account accountTemp = AccountUtil.accountFromPrivateKey(privateKey);
+            blockChainCore.getMiner().getWallet().addAccount(accountTemp);
+            AddAccountResponse response = new AddAccountResponse();
+            response.setAddAccountSuccess(true);
+            return ServiceResult.createSuccessServiceResult("删除区块成功",response);
+        } catch (Exception e){
+            String message = "新增账户失败";
+            logger.error(message,e);
+            return ServiceResult.createFailServiceResult(message);
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = AdminConsoleApiRoute.DELETE_ACCOUNT,method={RequestMethod.GET,RequestMethod.POST})
+    public ServiceResult<DeleteAccountResponse> deleteAccount(@RequestBody DeleteAccountRequest request){
+        try {
+            DeleteAccountResponse response = new DeleteAccountResponse();
+            response.setDeleteAccountSuccess(true);
+            ServiceResult<DeleteAccountResponse> responseServiceResult = ServiceResult.createSuccessServiceResult("删除账号成功",response);
+
+            Account account = request.getAccount();
+            if(account == null){
+                return ServiceResult.createFailServiceResult("账户不能为空。");
+            }
+            String address = account.getAddress();
+            if(!Strings.isNullOrEmpty(address)){
+                Account accountTemp = new Account(null,null,address);
+                blockChainCore.getMiner().getWallet().deleteAccount(accountTemp);
+                return responseServiceResult;
+            }
+            String publicKey = account.getPublicKey();
+            if(!Strings.isNullOrEmpty(publicKey)){
+                Account accountTemp = new Account(null,null, AccountUtil.addressFromPublicKey(publicKey));
+                blockChainCore.getMiner().getWallet().deleteAccount(accountTemp);
+                return responseServiceResult;
+            }
+            String privateKey = account.getPrivateKey();
+            if(!Strings.isNullOrEmpty(privateKey)){
+                Account accountTemp = new Account(null,null, AccountUtil.accountFromPrivateKey(privateKey).getAddress());
+                blockChainCore.getMiner().getWallet().deleteAccount(accountTemp);
+                return responseServiceResult;
+            }
+            return ServiceResult.createFailServiceResult("请填写需要删除的地址");
+        } catch (Exception e){
+            String message = "删除账号失败";
+            logger.error(message,e);
+            return ServiceResult.createFailServiceResult(message);
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = AdminConsoleApiRoute.QUERY_ALL_ACCOUNTLIST,method={RequestMethod.GET,RequestMethod.POST})
+    public ServiceResult<QueryAllAccountListResponse> queryAllAccountList(@RequestBody QueryAllAccountListRequest request){
+        try {
+            List<Account> allAccount = blockChainCore.getMiner().getWallet().queryAllAccount();
+            QueryAllAccountListResponse response = new QueryAllAccountListResponse();
+            response.setAccountList(allAccount);
             return ServiceResult.createSuccessServiceResult("删除区块成功",response);
         } catch (Exception e){
             String message = "删除区块失败";

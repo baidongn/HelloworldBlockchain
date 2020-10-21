@@ -26,6 +26,7 @@ public class NodeTransportDtoTool {
     private static Gson gson = new Gson();
     /**
      * 类型转换
+     * TODO 先填充不需要依赖blockchain的属性，然后填充依赖blockchain的属性
      */
     public static Block classCast(BlockChainDataBase blockChainDataBase, SynchronizerBlockDTO blockDTO) {
         if(LongUtil.isLessThan(blockDTO.getHeight(),LongUtil.ONE)){

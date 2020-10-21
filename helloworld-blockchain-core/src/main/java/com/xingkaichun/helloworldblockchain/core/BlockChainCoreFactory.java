@@ -16,16 +16,16 @@ public class BlockChainCoreFactory {
      * 创建BlockChainCore实例
      *
      * @param blockchainDataPath 区块链数据存放位置
-     * @param minerAddress 矿工账户地址
      */
-    public static BlockChainCore createBlockChainCore(String blockchainDataPath,String minerAddress) {
+    public static BlockChainCore createBlockChainCore(String blockchainDataPath) {
 
         Incentive incentive = new IncentiveDefaultImpl();
         Consensus consensus = new ProofOfWorkConsensusImpl();
         BlockChainDataBase blockChainDataBase = new BlockChainDataBaseDefaultImpl(blockchainDataPath,incentive,consensus);
 
         MinerTransactionDtoDataBase minerTransactionDtoDataBase = new MinerTransactionDtoDtoDataBaseDefaultImpl(blockchainDataPath);
-        Miner miner = new MinerDefaultImpl(blockChainDataBase, minerTransactionDtoDataBase, minerAddress);
+        Wallet wallet = new WalletImpl(blockchainDataPath);
+        Miner miner = new MinerDefaultImpl(blockChainDataBase, minerTransactionDtoDataBase, wallet);
 
         SynchronizerDataBase synchronizerDataBase = new SynchronizerDataBaseDefaultImpl(blockchainDataPath);
         BlockChainDataBase temporaryBlockChainDataBase = new BlockChainDataBaseDefaultImpl(new File(blockchainDataPath,"TemporaryBlockChainDataBase").getAbsolutePath(),incentive,consensus);

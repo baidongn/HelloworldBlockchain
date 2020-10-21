@@ -39,8 +39,7 @@ public class NetBlockchainCoreFactory {
         ConfigurationDao configurationDao = new ConfigurationDaoImpl(dataRootPath);
         configurationService = new ConfigurationServiceImpl(configurationDao);
 
-        String minerAddress = configurationService.getMinerAddress();
-        blockChainCore = BlockChainCoreFactory.createBlockChainCore(dataRootPath,minerAddress);
+        blockChainCore = BlockChainCoreFactory.createBlockChainCore(dataRootPath);
 
         NodeDao nodeDao = new NodeDaoImpl(dataRootPath);
 

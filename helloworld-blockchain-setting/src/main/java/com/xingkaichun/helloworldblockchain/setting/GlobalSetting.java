@@ -79,12 +79,7 @@ public class GlobalSetting {
         public static final long MINE_BLOCK_INCENTIVE_REDUCE_BY_HALF_INTERVAL_TIMESTAMP = 1000 * 60 * 60 * 24;
 
         //每轮挖矿最大时长。挖矿时间太长，则新提交的交易就很延迟才能包含到区块里。
-        public static final long MAX_MINE_TIMESTAMP = 1000 * 60 * 60;
-
-        //交易最大滞后区块时间
-        public static final long TRANSACTION_TIMESTAMP_MAX_AFTER_CURRENT_TIMESTAMP = 1000 * 60 * 60 * 24;
-        //交易最大超前区块时间
-        public static final long TRANSACTION_TIMESTAMP_MAX_BEFORE_CURRENT_TIMESTAMP = 1000 * 60 * 60 * 24;
+        public static final long MINE_TIMESTAMP_PER_ROUND = 1000 * 60 * 2;
     }
 
     /**

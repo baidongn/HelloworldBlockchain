@@ -1,10 +1,14 @@
-package com.xingkaichun.helloworldblockchain.core.model;
+package com.xingkaichun.helloworldblockchain.node.dto.adminconsole.response;
 
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
 
 import java.util.List;
 
-public class Wallet {
+/**
+ * @author xingkaichun@ceair.com
+ */
+public class QueryAllAccountListResponse {
+
 
     private List<Account> accountList;
 

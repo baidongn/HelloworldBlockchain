@@ -28,4 +28,7 @@ public class AdminConsoleApiRoute {
     public static final String REMOVE_BLOCK = "/Api/AdminConsole/RemoveBlock";
 
 
+    public static final String ADD_ACCOUNT = "/Api/AdminConsole/AddAccount";
+    public static final String DELETE_ACCOUNT = "/Api/AdminConsole/DeleteAccount";
+    public static final String QUERY_ALL_ACCOUNTLIST = "/Api/AdminConsole/QueryAllAccountList";
 }
