@@ -13,29 +13,29 @@ import java.util.List;
 public class TransactionDTO implements Serializable {
 
     //交易输入
-    private List<TransactionInputDTO> inputs;
+    private List<TransactionInputDTO> transactionInputDtoList;
     //交易输出
-    private List<TransactionOutputDTO> outputs;
+    private List<TransactionOutputDTO> transactionOutputDtoList;
 
 
 
 
     //region get set
 
-    public List<TransactionInputDTO> getInputs() {
-        return inputs;
+    public List<TransactionInputDTO> getTransactionInputDtoList() {
+        return transactionInputDtoList;
     }
 
-    public void setInputs(List<TransactionInputDTO> inputs) {
-        this.inputs = inputs;
+    public void setTransactionInputDtoList(List<TransactionInputDTO> transactionInputDtoList) {
+        this.transactionInputDtoList = transactionInputDtoList;
     }
 
-    public List<TransactionOutputDTO> getOutputs() {
-        return outputs;
+    public List<TransactionOutputDTO> getTransactionOutputDtoList() {
+        return transactionOutputDtoList;
     }
 
-    public void setOutputs(List<TransactionOutputDTO> outputs) {
-        this.outputs = outputs;
+    public void setTransactionOutputDtoList(List<TransactionOutputDTO> transactionOutputDtoList) {
+        this.transactionOutputDtoList = transactionOutputDtoList;
     }
 
     //endregion

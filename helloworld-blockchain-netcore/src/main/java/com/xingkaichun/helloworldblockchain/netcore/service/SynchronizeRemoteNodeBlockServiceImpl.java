@@ -231,7 +231,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
         synchronizerBlockDTO.setHeight(blockDTO.getNonce());
         synchronizerBlockDTO.setNonce(blockDTO.getNonce());
         synchronizerBlockDTO.setTimestamp(blockDTO.getTimestamp());
-        synchronizerBlockDTO.setTransactions(blockDTO.getTransactions());
+        synchronizerBlockDTO.setTransactionDtoList(blockDTO.getTransactionDtoList());
         return synchronizerBlockDTO;
     }
 

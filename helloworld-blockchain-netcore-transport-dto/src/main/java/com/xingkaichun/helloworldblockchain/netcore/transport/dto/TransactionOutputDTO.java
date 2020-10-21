@@ -2,7 +2,6 @@ package com.xingkaichun.helloworldblockchain.netcore.transport.dto;
 
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * 交易输出
@@ -15,7 +14,7 @@ public class TransactionOutputDTO implements Serializable {
     //交易输出的金额
     private long value;
     //脚本锁
-    private List<String> scriptLock;
+    private ScriptLockDTO scriptLockDTO;
 
 
 
@@ -30,12 +29,12 @@ public class TransactionOutputDTO implements Serializable {
         this.value = value;
     }
 
-    public List<String> getScriptLock() {
-        return scriptLock;
+    public ScriptLockDTO getScriptLockDTO() {
+        return scriptLockDTO;
     }
 
-    public void setScriptLock(List<String> scriptLock) {
-        this.scriptLock = scriptLock;
+    public void setScriptLockDTO(ScriptLockDTO scriptLockDTO) {
+        this.scriptLockDTO = scriptLockDTO;
     }
 
     //endregion

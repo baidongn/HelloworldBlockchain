@@ -1,7 +1,6 @@
 package com.xingkaichun.helloworldblockchain.netcore.transport.dto;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * 交易输入
@@ -12,30 +11,30 @@ import java.util.List;
 public class TransactionInputDTO implements Serializable {
 
     //未花费输出
-    private UnspendTransactionOutputDto unspendTransactionOutputDto;
+    private UnspendTransactionOutputDTO unspendTransactionOutputDTO;
 
     //脚本钥匙
-    private List<String> scriptKey;
+    private ScriptKeyDTO scriptKeyDTO;
 
 
 
 
     //region get set
 
-    public UnspendTransactionOutputDto getUnspendTransactionOutputDto() {
-        return unspendTransactionOutputDto;
+    public UnspendTransactionOutputDTO getUnspendTransactionOutputDTO() {
+        return unspendTransactionOutputDTO;
     }
 
-    public void setUnspendTransactionOutputDto(UnspendTransactionOutputDto unspendTransactionOutputDto) {
-        this.unspendTransactionOutputDto = unspendTransactionOutputDto;
+    public void setUnspendTransactionOutputDTO(UnspendTransactionOutputDTO unspendTransactionOutputDTO) {
+        this.unspendTransactionOutputDTO = unspendTransactionOutputDTO;
     }
 
-    public List<String> getScriptKey() {
-        return scriptKey;
+    public ScriptKeyDTO getScriptKeyDTO() {
+        return scriptKeyDTO;
     }
 
-    public void setScriptKey(List<String> scriptKey) {
-        this.scriptKey = scriptKey;
+    public void setScriptKeyDTO(ScriptKeyDTO scriptKeyDTO) {
+        this.scriptKeyDTO = scriptKeyDTO;
     }
 
     //endregion

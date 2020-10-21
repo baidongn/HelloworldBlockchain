@@ -13,7 +13,7 @@ public class BlockDTO implements Serializable {
     //区块产生的时间戳
     private long timestamp;
     //区块里的交易
-    private List<TransactionDTO> transactions;
+    private List<TransactionDTO> transactionDtoList;
     //共识值
     private long nonce;
 
@@ -30,12 +30,12 @@ public class BlockDTO implements Serializable {
         this.timestamp = timestamp;
     }
 
-    public List<TransactionDTO> getTransactions() {
-        return transactions;
+    public List<TransactionDTO> getTransactionDtoList() {
+        return transactionDtoList;
     }
 
-    public void setTransactions(List<TransactionDTO> transactions) {
-        this.transactions = transactions;
+    public void setTransactionDtoList(List<TransactionDTO> transactionDtoList) {
+        this.transactionDtoList = transactionDtoList;
     }
 
     public long getNonce() {

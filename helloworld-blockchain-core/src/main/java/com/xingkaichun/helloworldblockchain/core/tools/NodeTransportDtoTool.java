@@ -34,7 +34,7 @@ public class NodeTransportDtoTool {
         }
 
         List<Transaction> transactionList = new ArrayList<>();
-        List<TransactionDTO> transactionDtoList = blockDTO.getTransactions();
+        List<TransactionDTO> transactionDtoList = blockDTO.getTransactionDtoList();
         if(transactionDtoList != null){
             for(TransactionDTO transactionDTO:transactionDtoList){
                 Transaction transaction = classCast(blockChainDataBase,transactionDTO);
@@ -83,7 +83,7 @@ public class NodeTransportDtoTool {
 
         BlockDTO blockDTO = new BlockDTO();
         blockDTO.setTimestamp(block.getTimestamp());
-        blockDTO.setTransactions(transactionDtoList);
+        blockDTO.setTransactionDtoList(transactionDtoList);
         blockDTO.setNonce(block.getNonce());
         return blockDTO;
     }
@@ -93,10 +93,10 @@ public class NodeTransportDtoTool {
      */
     public static Transaction classCast(BlockChainDataBase blockChainDataBase, TransactionDTO transactionDTO) {
         List<TransactionInput> inputs = new ArrayList<>();
-        List<TransactionInputDTO> transactionInputDtoList = transactionDTO.getInputs();
+        List<TransactionInputDTO> transactionInputDtoList = transactionDTO.getTransactionInputDtoList();
         if(transactionInputDtoList != null){
             for (TransactionInputDTO transactionInputDTO:transactionInputDtoList){
-                UnspendTransactionOutputDto unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDto();
+                UnspendTransactionOutputDTO unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDTO();
                 TransactionOutputId transactionOutputId = new TransactionOutputId();
                 transactionOutputId.setTransactionHash(unspendTransactionOutputDto.getTransactionHash());
                 transactionOutputId.setTransactionOutputSequence(unspendTransactionOutputDto.getTransactionOutputIndex());
@@ -107,13 +107,13 @@ public class NodeTransportDtoTool {
                 }
                 TransactionInput transactionInput = new TransactionInput();
                 transactionInput.setUnspendTransactionOutput(unspendTransactionOutput);
-                transactionInput.setScriptKey(scriptKeyFrom(transactionInputDTO.getScriptKey()));
+                transactionInput.setScriptKey(scriptKeyFrom(transactionInputDTO.getScriptKeyDTO()));
                 inputs.add(transactionInput);
             }
         }
 
         List<TransactionOutput> outputs = new ArrayList<>();
-        List<TransactionOutputDTO> dtoOutputs = transactionDTO.getOutputs();
+        List<TransactionOutputDTO> dtoOutputs = transactionDTO.getTransactionOutputDtoList();
         if(dtoOutputs != null){
             for(TransactionOutputDTO transactionOutputDTO:dtoOutputs){
                 TransactionOutput transactionOutput = classCast(transactionOutputDTO);
@@ -131,7 +131,7 @@ public class NodeTransportDtoTool {
     }
 
     private static TransactionType transactionTypeFromTransactionDTO(TransactionDTO transactionDTO) {
-        if(transactionDTO.getInputs() == null || transactionDTO.getInputs().size()==0){
+        if(transactionDTO.getTransactionInputDtoList() == null || transactionDTO.getTransactionInputDtoList().size()==0){
             return TransactionType.COINBASE;
         }
         return TransactionType.NORMAL;
@@ -162,11 +162,11 @@ public class NodeTransportDtoTool {
         List<TransactionInput> transactionInputList = transaction.getInputs();
         if(transactionInputList!=null){
             for (TransactionInput transactionInput:transactionInputList){
-                UnspendTransactionOutputDto unspendTransactionOutputDto = transactionOutput2UnspendTransactionOutputDto(transactionInput.getUnspendTransactionOutput());
+                UnspendTransactionOutputDTO unspendTransactionOutputDto = transactionOutput2UnspendTransactionOutputDto(transactionInput.getUnspendTransactionOutput());
 
                 TransactionInputDTO transactionInputDTO = new TransactionInputDTO();
-                transactionInputDTO.setUnspendTransactionOutputDto(unspendTransactionOutputDto);
-                transactionInputDTO.setScriptKey(transactionInput.getScriptKey());
+                transactionInputDTO.setUnspendTransactionOutputDTO(unspendTransactionOutputDto);
+                transactionInputDTO.setScriptKeyDTO(scriptKey2ScriptKeyDTO(transactionInput.getScriptKey()));
                 inputs.add(transactionInputDTO);
             }
         }
@@ -181,9 +181,21 @@ public class NodeTransportDtoTool {
         }
 
         TransactionDTO transactionDTO = new TransactionDTO();
-        transactionDTO.setInputs(inputs);
-        transactionDTO.setOutputs(outputs);
+        transactionDTO.setTransactionInputDtoList(inputs);
+        transactionDTO.setTransactionOutputDtoList(outputs);
         return transactionDTO;
+    }
+
+    public static ScriptKeyDTO scriptKey2ScriptKeyDTO(ScriptKey scriptKey) {
+        ScriptKeyDTO scriptKeyDTO = new ScriptKeyDTO();
+        scriptKeyDTO.addAll(scriptKey);
+        return scriptKeyDTO;
+    }
+
+    public static ScriptLockDTO scriptLock2ScriptLockDTO(ScriptLock scriptLock) {
+        ScriptLockDTO scriptLockDTO = new ScriptLockDTO();
+        scriptLockDTO.addAll(scriptLock);
+        return scriptLockDTO;
     }
 
     /**
@@ -191,11 +203,11 @@ public class NodeTransportDtoTool {
      */
     public static TransactionOutput classCast(TransactionOutputDTO transactionOutputDTO) {
         TransactionOutput transactionOutput = new TransactionOutput();
-        String publicKeyHash = StackBasedVirtualMachine.getPublicKeyHashByPayToPublicKeyHashOutputScript(transactionOutputDTO.getScriptLock());
+        String publicKeyHash = StackBasedVirtualMachine.getPublicKeyHashByPayToPublicKeyHashOutputScript(transactionOutputDTO.getScriptLockDTO());
         String address = AccountUtil.addressFromPublicKeyHash(publicKeyHash);
         transactionOutput.setAddress(address);
         transactionOutput.setValue(transactionOutputDTO.getValue());
-        transactionOutput.setScriptLock(scriptLockFrom(transactionOutputDTO.getScriptLock()));
+        transactionOutput.setScriptLock(scriptLockFrom(transactionOutputDTO.getScriptLockDTO()));
         return transactionOutput;
     }
     /**
@@ -204,14 +216,15 @@ public class NodeTransportDtoTool {
     public static TransactionOutputDTO transactionOutput2TransactionOutputDTO(TransactionOutput transactionOutput) {
         TransactionOutputDTO transactionOutputDTO = new TransactionOutputDTO();
         transactionOutputDTO.setValue(transactionOutput.getValue());
-        transactionOutputDTO.setScriptLock(transactionOutput.getScriptLock());
+        transactionOutputDTO.setScriptLockDTO(scriptLock2ScriptLockDTO(transactionOutput.getScriptLock()));
         return transactionOutputDTO;
     }
+
     /**
      * 类型转换
      */
-    public static UnspendTransactionOutputDto transactionOutput2UnspendTransactionOutputDto(TransactionOutput transactionOutput) {
-        UnspendTransactionOutputDto unspendTransactionOutputDto = new UnspendTransactionOutputDto();
+    public static UnspendTransactionOutputDTO transactionOutput2UnspendTransactionOutputDto(TransactionOutput transactionOutput) {
+        UnspendTransactionOutputDTO unspendTransactionOutputDto = new UnspendTransactionOutputDTO();
         unspendTransactionOutputDto.setTransactionHash(transactionOutput.getTransactionHash());
         unspendTransactionOutputDto.setTransactionOutputIndex(transactionOutput.getTransactionOutputSequence());
         return unspendTransactionOutputDto;

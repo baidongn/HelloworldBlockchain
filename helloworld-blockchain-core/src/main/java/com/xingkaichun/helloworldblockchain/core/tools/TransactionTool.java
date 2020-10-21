@@ -15,7 +15,7 @@ import com.xingkaichun.helloworldblockchain.crypto.SHA256Util;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionDTO;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionInputDTO;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionOutputDTO;
-import com.xingkaichun.helloworldblockchain.netcore.transport.dto.UnspendTransactionOutputDto;
+import com.xingkaichun.helloworldblockchain.netcore.transport.dto.UnspendTransactionOutputDTO;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,11 +136,11 @@ public class TransactionTool {
      */
     public static byte[] bytesTransaction(TransactionDTO transactionDTO) {
         List<byte[]> bytesTransactionInputList = new ArrayList<>();
-        List<TransactionInputDTO> inputs = transactionDTO.getInputs();
+        List<TransactionInputDTO> inputs = transactionDTO.getTransactionInputDtoList();
         if(inputs != null){
             for(TransactionInputDTO transactionInputDTO:inputs){
                 //TODO 可以精简结构
-                UnspendTransactionOutputDto unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDto();
+                UnspendTransactionOutputDTO unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDTO();
                 byte[] bytesTransactionHash = HexUtil.hexStringToBytes(unspendTransactionOutputDto.getTransactionHash());
                 byte[] bytesTransactionOutputIndex = ByteUtil.longToBytes8(unspendTransactionOutputDto.getTransactionOutputIndex());
                 byte[] bytesUnspendTransactionOutput = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionHash),
@@ -152,11 +152,11 @@ public class TransactionTool {
         }
 
         List<byte[]> bytesTransactionOutputList = new ArrayList<>();
-        List<TransactionOutputDTO> outputs = transactionDTO.getOutputs();
+        List<TransactionOutputDTO> outputs = transactionDTO.getTransactionOutputDtoList();
         if(outputs != null){
             for(TransactionOutputDTO transactionOutputDTO:outputs){
                 byte[] bytesValue = ByteUtil.longToBytes8(transactionOutputDTO.getValue());
-                byte[] bytesScriptLock = ScriptTool.bytesScript(transactionOutputDTO.getScriptLock());
+                byte[] bytesScriptLock = ScriptTool.bytesScript(transactionOutputDTO.getScriptLockDTO());
                 byte[] bytesTransactionOutput = Bytes.concat(ByteUtil.concatLengthBytes(bytesValue),
                         ByteUtil.concatLengthBytes(bytesScriptLock));
                 bytesTransactionOutputList.add(bytesTransactionOutput);

@@ -3,6 +3,8 @@ package com.xingkaichun.helloworldblockchain.netcore.service;
 import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
 import com.xingkaichun.helloworldblockchain.core.BlockChainDataBase;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
+import com.xingkaichun.helloworldblockchain.core.model.script.ScriptKey;
+import com.xingkaichun.helloworldblockchain.core.model.script.ScriptLock;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
@@ -113,7 +115,8 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
             for(NormalTransactionDto.Output o:outputs){
                 TransactionOutputDTO transactionOutputDTO = new TransactionOutputDTO();
                 transactionOutputDTO.setValue(o.getValue());
-                transactionOutputDTO.setScriptLock(StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(o.getAddress()));
+                ScriptLock scriptLock = StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(o.getAddress());
+                transactionOutputDTO.setScriptLockDTO(NodeTransportDtoTool.scriptLock2ScriptLockDTO(scriptLock));
                 transactionOutputDtoList.add(transactionOutputDTO);
                 values += o.getValue();
             }
@@ -144,28 +147,30 @@ public class BlockChainCoreServiceImpl implements BlockChainCoreService {
             long change = inputValues - values;
             TransactionOutputDTO transactionOutputDTO = new TransactionOutputDTO();
             transactionOutputDTO.setValue(change);
-            transactionOutputDTO.setScriptLock(StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(account.getAddress()));
+            ScriptLock scriptLock = StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(account.getAddress());
+            transactionOutputDTO.setScriptLockDTO(NodeTransportDtoTool.scriptLock2ScriptLockDTO(scriptLock));
             transactionOutputDtoList.add(transactionOutputDTO);
         }
 
 
         List<TransactionInputDTO> transactionInputDtoList = new ArrayList<>();
         for(TransactionOutput input:inputs){
-            UnspendTransactionOutputDto unspendTransactionOutputDto = NodeTransportDtoTool.transactionOutput2UnspendTransactionOutputDto(input);
+            UnspendTransactionOutputDTO unspendTransactionOutputDto = NodeTransportDtoTool.transactionOutput2UnspendTransactionOutputDto(input);
             TransactionInputDTO transactionInputDTO = new TransactionInputDTO();
-            transactionInputDTO.setUnspendTransactionOutputDto(unspendTransactionOutputDto);
+            transactionInputDTO.setUnspendTransactionOutputDTO(unspendTransactionOutputDto);
             transactionInputDtoList.add(transactionInputDTO);
         }
 
 
 
         TransactionDTO transactionDTO = new TransactionDTO();
-        transactionDTO.setInputs(transactionInputDtoList);
-        transactionDTO.setOutputs(transactionOutputDtoList);
+        transactionDTO.setTransactionInputDtoList(transactionInputDtoList);
+        transactionDTO.setTransactionOutputDtoList(transactionOutputDtoList);
 
         for(TransactionInputDTO transactionInputDTO:transactionInputDtoList){
             String signature = signatureTransactionDTO(transactionDTO, account.getPrivateKey());
-            transactionInputDTO.setScriptKey(StackBasedVirtualMachine.createPayToPublicKeyHashInputScript(signature, account.getPublicKey()));
+            ScriptKey scriptKey = StackBasedVirtualMachine.createPayToPublicKeyHashInputScript(signature, account.getPublicKey());
+            transactionInputDTO.setScriptKeyDTO(NodeTransportDtoTool.scriptKey2ScriptKeyDTO(scriptKey));
         }
         return transactionDTO;
     }
