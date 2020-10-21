@@ -137,17 +137,30 @@ public class TransactionTool {
     public static byte[] bytesTransaction(TransactionDTO transactionDTO) {
         List<byte[]> bytesTransactionInputList = new ArrayList<>();
         List<TransactionInputDTO> inputs = transactionDTO.getInputs();
-        if(inputs != null && inputs.size()!=0){
+        if(inputs != null){
             for(TransactionInputDTO transactionInputDTO:inputs){
-                byte[] bytesTransactionInput = bytesTransactionInput(transactionInputDTO);
+                //TODO 可以精简结构
+                UnspendTransactionOutputDto unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDto();
+                byte[] bytesTransactionHash = HexUtil.hexStringToBytes(unspendTransactionOutputDto.getTransactionHash());
+                byte[] bytesTransactionOutputIndex = ByteUtil.longToBytes8(unspendTransactionOutputDto.getTransactionOutputIndex());
+                byte[] bytesUnspendTransactionOutput = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionHash),
+                        ByteUtil.concatLengthBytes(bytesTransactionOutputIndex));
+                byte[] bytesTransactionInput = Bytes.concat(ByteUtil.concatLengthBytes(bytesUnspendTransactionOutput));
+                //TODO 需要加输入解锁脚本吗？
                 bytesTransactionInputList.add(bytesTransactionInput);
             }
         }
+
         List<byte[]> bytesTransactionOutputList = new ArrayList<>();
         List<TransactionOutputDTO> outputs = transactionDTO.getOutputs();
-        for(TransactionOutputDTO transactionOutputDTO:outputs){
-            byte[] bytesTransactionOutput = bytesTransactionOutput(transactionOutputDTO);
-            bytesTransactionOutputList.add(bytesTransactionOutput);
+        if(outputs != null){
+            for(TransactionOutputDTO transactionOutputDTO:outputs){
+                byte[] bytesValue = ByteUtil.longToBytes8(transactionOutputDTO.getValue());
+                byte[] bytesScriptLock = ScriptTool.bytesScript(transactionOutputDTO.getScriptLock());
+                byte[] bytesTransactionOutput = Bytes.concat(ByteUtil.concatLengthBytes(bytesValue),
+                        ByteUtil.concatLengthBytes(bytesScriptLock));
+                bytesTransactionOutputList.add(bytesTransactionOutput);
+            }
         }
 
         byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionInputList),
@@ -221,51 +234,6 @@ public class TransactionTool {
             return false;
         }
         return true;
-    }
-
-    /**
-     * 字节型交易输入
-     */
-    private static byte[] bytesTransactionInput(TransactionInputDTO transactionInputDTO) {
-        UnspendTransactionOutputDto unspendTransactionOutputDto = transactionInputDTO.getUnspendTransactionOutputDto();
-        List<String> scriptKey = transactionInputDTO.getScriptKey();
-
-        byte[] bytesUnspendTransactionOutput = bytesUnspendTransactionOutput(unspendTransactionOutputDto);
-        byte[] bytesScriptKey = ScriptTool.bytesScript(scriptKey);
-
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesUnspendTransactionOutput),
-                ByteUtil.concatLengthBytes(bytesScriptKey));
-        return data;
-    }
-
-    /**
-     * 字节型交易输入
-     */
-    private static byte[] bytesUnspendTransactionOutput(UnspendTransactionOutputDto unspendTransactionOutputDto) {
-        String transactionHash = unspendTransactionOutputDto.getTransactionHash();
-        long transactionOutputIndex = unspendTransactionOutputDto.getTransactionOutputIndex();
-
-        byte[] bytesTransactionHash = HexUtil.hexStringToBytes(transactionHash);
-        byte[] bytesTransactionOutputIndex = ByteUtil.longToBytes8(transactionOutputIndex);
-
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesTransactionHash),
-                ByteUtil.concatLengthBytes(bytesTransactionOutputIndex));
-        return data;
-    }
-
-    /**
-     * 字节型交易输出
-     */
-    public static byte[] bytesTransactionOutput(TransactionOutputDTO transactionOutputDTO) {
-        long value = transactionOutputDTO.getValue();
-        List<String> scriptLock = transactionOutputDTO.getScriptLock();
-
-        byte[] bytesValue = ByteUtil.longToBytes8(value);
-        byte[] bytesScriptLock = ScriptTool.bytesScript(scriptLock);
-
-        byte[] data = Bytes.concat(ByteUtil.concatLengthBytes(bytesValue),
-                ByteUtil.concatLengthBytes(bytesScriptLock));
-        return data;
     }
 
     /**
