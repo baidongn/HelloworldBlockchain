@@ -5,7 +5,7 @@ import com.xingkaichun.helloworldblockchain.core.Synchronizer;
 import com.xingkaichun.helloworldblockchain.core.SynchronizerDataBase;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
-import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
+import com.xingkaichun.helloworldblockchain.core.tools.Dto2ModelTool;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.ThreadUtil;
@@ -101,7 +101,7 @@ public class SynchronizerDefaultImpl extends Synchronizer {
         if(blockDTO != null){
             temporaryBlockChainDataBase.removeBlocksUtilBlockHeightLessThan(minBlockHeight);
             while(blockDTO != null){
-                Block block = NodeTransportDtoTool.blockDto2Block(temporaryBlockChainDataBase,blockDTO);
+                Block block = Dto2ModelTool.blockDto2Block(temporaryBlockChainDataBase,blockDTO);
                 boolean isAddBlockToBlockChainSuccess = temporaryBlockChainDataBase.addBlock(block);
                 if(!isAddBlockToBlockChainSuccess){
                     break;

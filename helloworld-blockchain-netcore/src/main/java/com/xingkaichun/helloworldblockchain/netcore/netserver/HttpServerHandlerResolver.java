@@ -2,7 +2,7 @@ package com.xingkaichun.helloworldblockchain.netcore.netserver;
 
 import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
-import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
+import com.xingkaichun.helloworldblockchain.core.tools.Model2DtoTool;
 import com.xingkaichun.helloworldblockchain.netcore.dto.common.ServiceResult;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.NodeDto;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.request.*;
@@ -131,7 +131,7 @@ public class HttpServerHandlerResolver {
     public ServiceResult<QueryBlockDtoByBlockHeightResponse> queryBlockDtoByBlockHeight(QueryBlockDtoByBlockHeightRequest request){
         try {
             Block block = blockChainCore.queryBlockByBlockHeight(request.getBlockHeight());
-            BlockDTO blockDTO = NodeTransportDtoTool.block2BlockDTO(block);
+            BlockDTO blockDTO = Model2DtoTool.block2BlockDTO(block);
 
             QueryBlockDtoByBlockHeightResponse response = new QueryBlockDtoByBlockHeightResponse();
             response.setBlockDTO(blockDTO);

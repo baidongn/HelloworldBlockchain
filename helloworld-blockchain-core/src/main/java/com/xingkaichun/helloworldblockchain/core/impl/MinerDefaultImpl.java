@@ -11,7 +11,7 @@ import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOu
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionType;
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
 import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
-import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
+import com.xingkaichun.helloworldblockchain.core.tools.Dto2ModelTool;
 import com.xingkaichun.helloworldblockchain.core.tools.TransactionTool;
 import com.xingkaichun.helloworldblockchain.core.utils.ThreadUtil;
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
@@ -106,7 +106,7 @@ public class MinerDefaultImpl extends Miner {
         if(forMineBlockTransactionDtoList != null){
             for(TransactionDTO transactionDTO:forMineBlockTransactionDtoList){
                 try {
-                    Transaction transaction = NodeTransportDtoTool.transactionDto2Transaction(blockChainDataBase,transactionDTO);
+                    Transaction transaction = Dto2ModelTool.transactionDto2Transaction(blockChainDataBase,transactionDTO);
                     forMineBlockTransactionList.add(transaction);
                 } catch (Exception e) {
                     String transactionHash = TransactionTool.calculateTransactionHash(transactionDTO);

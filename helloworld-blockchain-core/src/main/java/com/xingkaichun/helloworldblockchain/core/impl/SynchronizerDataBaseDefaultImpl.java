@@ -1,7 +1,7 @@
 package com.xingkaichun.helloworldblockchain.core.impl;
 
 import com.xingkaichun.helloworldblockchain.core.SynchronizerDataBase;
-import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
+import com.xingkaichun.helloworldblockchain.core.tools.Model2DtoTool;
 import com.xingkaichun.helloworldblockchain.core.utils.FileUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.JdbcUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
@@ -62,7 +62,7 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
             preparedStatement = connection().prepareStatement(sql);
             preparedStatement.setString(1,nodeId);
             preparedStatement.setLong(2, blockHeight);
-            preparedStatement.setString(3, NodeTransportDtoTool.encode(blockDTO));
+            preparedStatement.setString(3, Model2DtoTool.encode(blockDTO));
             preparedStatement.setLong(4,System.currentTimeMillis());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -129,7 +129,7 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
             resultSet = preparedStatement.executeQuery();
             if (resultSet.next()){
                 String blockDTO = resultSet.getString("blockDto");
-                return NodeTransportDtoTool.decodeToBlockDTO(blockDTO);
+                return Model2DtoTool.decodeToBlockDTO(blockDTO);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

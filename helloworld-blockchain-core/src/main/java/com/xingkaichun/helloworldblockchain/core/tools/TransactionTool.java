@@ -117,7 +117,7 @@ public class TransactionTool {
      * 计算交易哈希
      */
     public static String calculateTransactionHash(Transaction transaction){
-        return calculateTransactionHash(NodeTransportDtoTool.transaction2TransactionDTO(transaction));
+        return calculateTransactionHash(Model2DtoTool.transaction2TransactionDTO(transaction));
     }
 
     /**

@@ -8,7 +8,8 @@ import com.xingkaichun.helloworldblockchain.core.model.script.ScriptLock;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
-import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
+import com.xingkaichun.helloworldblockchain.core.tools.Dto2ModelTool;
+import com.xingkaichun.helloworldblockchain.core.tools.Model2DtoTool;
 import com.xingkaichun.helloworldblockchain.core.tools.TransactionTool;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
@@ -163,7 +164,7 @@ public class BlockChainCoreImpl extends BlockChainCore {
                 TransactionOutputDTO transactionOutputDTO = new TransactionOutputDTO();
                 transactionOutputDTO.setValue(recipient.getValue());
                 ScriptLock scriptLock = StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(recipient.getAddress());
-                transactionOutputDTO.setScriptLockDTO(NodeTransportDtoTool.scriptLock2ScriptLockDTO(scriptLock));
+                transactionOutputDTO.setScriptLockDTO(Model2DtoTool.scriptLock2ScriptLockDTO(scriptLock));
                 transactionOutputDtoList.add(transactionOutputDTO);
             }
         }
@@ -208,7 +209,7 @@ public class BlockChainCoreImpl extends BlockChainCore {
         //构建交易输入
         List<TransactionInputDTO> transactionInputDtoList = new ArrayList<>();
         for(TransactionOutput input:inputs){
-            UnspendTransactionOutputDTO unspendTransactionOutputDto = NodeTransportDtoTool.transactionOutput2UnspendTransactionOutputDto(input);
+            UnspendTransactionOutputDTO unspendTransactionOutputDto = Model2DtoTool.transactionOutput2UnspendTransactionOutputDto(input);
             TransactionInputDTO transactionInputDTO = new TransactionInputDTO();
             transactionInputDTO.setUnspendTransactionOutputDTO(unspendTransactionOutputDto);
             transactionInputDtoList.add(transactionInputDTO);
@@ -220,7 +221,7 @@ public class BlockChainCoreImpl extends BlockChainCore {
         transactionDTO.setTransactionOutputDtoList(transactionOutputDtoList);
 
         //校验校验手续费够不够，如果不够的话，继续补充交易手续费
-        Transaction transaction = NodeTransportDtoTool.transactionDto2Transaction(blockChainDataBase,transactionDTO);
+        Transaction transaction = Dto2ModelTool.transactionDto2Transaction(blockChainDataBase,transactionDTO);
         if(TransactionTool.isTransactionFeeRight(transaction)){
 
         }
@@ -235,7 +236,7 @@ public class BlockChainCoreImpl extends BlockChainCore {
             TransactionOutputDTO transactionOutputDTO = new TransactionOutputDTO();
             transactionOutputDTO.setValue(change);
             ScriptLock scriptLock = StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(account.getAddress());
-            transactionOutputDTO.setScriptLockDTO(NodeTransportDtoTool.scriptLock2ScriptLockDTO(scriptLock));
+            transactionOutputDTO.setScriptLockDTO(Model2DtoTool.scriptLock2ScriptLockDTO(scriptLock));
             transactionDTO.getTransactionOutputDtoList().add(transactionOutputDTO);
         }
 
@@ -244,9 +245,9 @@ public class BlockChainCoreImpl extends BlockChainCore {
             String privateKey = inputPrivateKeyList.get(i);
             String publicKey = AccountUtil.accountFromPrivateKey(privateKey).getPublicKey();
             TransactionInputDTO transactionInputDTO = transactionInputDtoList.get(i);
-            String signature = NodeTransportDtoTool.signature(transactionDTO,privateKey);
+            String signature = Model2DtoTool.signature(transactionDTO,privateKey);
             ScriptKey scriptKey = StackBasedVirtualMachine.createPayToPublicKeyHashInputScript(signature, publicKey);
-            transactionInputDTO.setScriptKeyDTO(NodeTransportDtoTool.scriptKey2ScriptKeyDTO(scriptKey));
+            transactionInputDTO.setScriptKeyDTO(Model2DtoTool.scriptKey2ScriptKeyDTO(scriptKey));
         }
         return transactionDTO;
     }

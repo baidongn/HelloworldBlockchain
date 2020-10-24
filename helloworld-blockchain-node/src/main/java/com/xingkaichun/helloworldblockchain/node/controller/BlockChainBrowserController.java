@@ -5,7 +5,7 @@ import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
-import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
+import com.xingkaichun.helloworldblockchain.core.tools.Model2DtoTool;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
 import com.xingkaichun.helloworldblockchain.netcore.NetBlockchainCore;
@@ -109,7 +109,7 @@ public class BlockChainBrowserController {
             if(transaction == null){
                 return ServiceResult.createFailServiceResult(String.format("区块链中不存在交易哈希[%s]，请检查输入的交易哈希。",request.getTransactionHash()));
             }
-            TransactionDTO transactionDTO = NodeTransportDtoTool.transaction2TransactionDTO(transaction);
+            TransactionDTO transactionDTO = Model2DtoTool.transaction2TransactionDTO(transaction);
             QueryTransactionByTransactionHashResponse response = new QueryTransactionByTransactionHashResponse();
             response.setTransactionDTO(transactionDTO);
             return ServiceResult.createSuccessServiceResult("根据交易哈希查询交易成功",response);
