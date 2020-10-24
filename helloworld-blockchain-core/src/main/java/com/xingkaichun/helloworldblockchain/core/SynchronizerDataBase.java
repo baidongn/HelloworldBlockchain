@@ -1,6 +1,6 @@
 package com.xingkaichun.helloworldblockchain.core;
 
-import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlock;
+import com.xingkaichun.helloworldblockchain.netcore.transport.dto.BlockDTO;
 
 import java.util.List;
 
@@ -59,7 +59,7 @@ public abstract class SynchronizerDataBase {
     /**
      * 保存节点(nodeId)传输过来的数据
      */
-    public abstract boolean addBlockDTO(String nodeId, SynchronizerBlock blockDTO) ;
+    public abstract boolean addBlockDTO(String nodeId, long blockHeight, BlockDTO blockDTO) ;
     /**
      * 获取节点(nodeId)传输过来所有区块中最小的区块高度。
      */
@@ -71,7 +71,7 @@ public abstract class SynchronizerDataBase {
     /**
      * 根据节点与区块高度获取区块
      */
-    public abstract SynchronizerBlock getBlockDto(String nodeId, long blockHeight) ;
+    public abstract BlockDTO getBlockDto(String nodeId, long blockHeight) ;
     /**
      * 给节点(nodeId)添加数据传输完成的标识。
      */

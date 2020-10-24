@@ -5,7 +5,6 @@ import com.xingkaichun.helloworldblockchain.core.BlockChainDataBase;
 import com.xingkaichun.helloworldblockchain.core.Synchronizer;
 import com.xingkaichun.helloworldblockchain.core.SynchronizerDataBase;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
-import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlock;
 import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
@@ -108,7 +107,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
                     forkNodeHandler(node,synchronizerDataBase);
                     return;
                 }
-                SynchronizerBlock blockDTO = getBlockDtoByBlockHeight(node,tempBlockHeight);
+                BlockDTO blockDTO = getBlockDtoByBlockHeight(node,tempBlockHeight);
                 if(blockDTO == null){
                     break;
                 }
@@ -122,7 +121,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
                 if(StringUtil.isEquals(blockHash,localBlock.getHash())){
                     break;
                 }
-                synchronizerDataBase.addBlockDTO(nodeId,blockDTO);
+                synchronizerDataBase.addBlockDTO(nodeId,tempBlockHeight,blockDTO);
                 tempBlockHeight = tempBlockHeight - LongUtil.ONE;
             }
             //从当前节点同步至最新
@@ -131,7 +130,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
                 if(LongUtil.isLessEqualThan(tempBlockHeight,LongUtil.ZERO)){
                     break;
                 }
-                SynchronizerBlock blockDTO = getBlockDtoByBlockHeight(node,tempBlockHeight);
+                BlockDTO blockDTO = getBlockDtoByBlockHeight(node,tempBlockHeight);
                 if(blockDTO == null){
                     break;
                 }
@@ -140,7 +139,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
                 if(!ServiceResult.isSuccess(queryBlockHashByBlockHeightResponseServiceResult)){
                     break;
                 }
-                synchronizerDataBase.addBlockDTO(nodeId,blockDTO);
+                synchronizerDataBase.addBlockDTO(nodeId,tempBlockHeight,blockDTO);
                 tempBlockHeight = tempBlockHeight + LongUtil.ONE;
                 //若是有分叉时，一次同步的最后一个区块至少要比本地区块链的高度大于N个
                 if(LongUtil.isGreatEqualThan(tempBlockHeight,localBlockChainHeight + SYNCHRONIZE_BLOCK_SIZE_FROM_LOCAL_BLOCKCHAIN_HEIGHT)){
@@ -151,7 +150,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
             //未分叉
             long tempBlockHeight = localBlockChainHeight + LongUtil.ONE;
             while (true){
-                SynchronizerBlock blockDTO = getBlockDtoByBlockHeight(node,tempBlockHeight);
+                BlockDTO blockDTO = getBlockDtoByBlockHeight(node,tempBlockHeight);
                 if(blockDTO == null){
                     synchronizerDataBase.clear(nodeId);
                     return;
@@ -217,8 +216,8 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
         return node.getIp()+":"+node.getPort();
     }
 
-    private SynchronizerBlock getBlockDtoByBlockHeight(NodeDto node, long blockHeight) {
-        SynchronizerBlock localBlockDTO = getLocalBlockDtoByBlockHeight(node,blockHeight);
+    private BlockDTO getBlockDtoByBlockHeight(NodeDto node, long blockHeight) {
+        BlockDTO localBlockDTO = getLocalBlockDtoByBlockHeight(node,blockHeight);
         if(localBlockDTO != null){
             return localBlockDTO;
         }
@@ -227,17 +226,12 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
             return null;
         }
         BlockDTO blockDTO = blockDtoServiceResult.getResult().getBlockDTO();
-        SynchronizerBlock synchronizerBlock = new SynchronizerBlock();
-        synchronizerBlock.setHeight(blockDTO.getNonce());
-        synchronizerBlock.setNonce(blockDTO.getNonce());
-        synchronizerBlock.setTimestamp(blockDTO.getTimestamp());
-        synchronizerBlock.setTransactionDtoList(blockDTO.getTransactionDtoList());
-        return synchronizerBlock;
+        return blockDTO;
     }
 
-    private SynchronizerBlock getLocalBlockDtoByBlockHeight(NodeDto node, long blockHeight) {
+    private BlockDTO getLocalBlockDtoByBlockHeight(NodeDto node, long blockHeight) {
         SynchronizerDataBase synchronizerDataBase = blockChainCore.getSynchronizer().getSynchronizerDataBase();
-        SynchronizerBlock blockDTO = synchronizerDataBase.getBlockDto(buildNodeId(node),blockHeight);
+        BlockDTO blockDTO = synchronizerDataBase.getBlockDto(buildNodeId(node),blockHeight);
         return blockDTO;
     }
 }

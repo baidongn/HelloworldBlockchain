@@ -5,10 +5,8 @@ import com.xingkaichun.helloworldblockchain.core.BlockChainDataBase;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptKey;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptLock;
-import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlock;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.*;
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
-import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.*;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
@@ -28,11 +26,33 @@ public class NodeTransportDtoTool {
      * 类型转换
      * TODO 先填充不需要依赖blockchain的属性，然后填充依赖blockchain的属性
      */
-    public static Block classCast(BlockChainDataBase blockChainDataBase, SynchronizerBlock blockDTO) {
-        if(LongUtil.isLessThan(blockDTO.getHeight(),LongUtil.ONE)){
-            throw new ClassCastException("区块的高度不能少于1");
+    public static Block classCast(BlockChainDataBase blockChainDataBase, BlockDTO blockDTO) {
+        //求上一个区块的hash
+        String previousBlockHash = blockDTO.getPreviousBlockHash();
+        Block previousBlock = blockChainDataBase.queryBlockByBlockHash(previousBlockHash);
+
+        Block block = new Block();
+        block.setTimestamp(blockDTO.getTimestamp());
+        block.setPreviousBlockHash(previousBlockHash);
+        block.setNonce(blockDTO.getNonce());
+        block.setHash(BlockTool.calculateBlockHash(block));
+
+        //简单校验hash的难度 构造能满足共识的hash很难
+        if(blockChainDataBase.getConsensus().isReachConsensus(blockChainDataBase,block)){
+            throw new RuntimeException();
         }
 
+        long blockHeight = previousBlock==null?GlobalSetting.GenesisBlock.HEIGHT+1:previousBlock.getHeight()+1;
+        List<Transaction> transactionList = obtainTransactionList(blockChainDataBase,blockDTO);
+        String merkleTreeRoot = BlockTool.calculateBlockMerkleTreeRoot(block);
+
+        block.setHeight(blockHeight);
+        block.setTransactions(transactionList);
+        block.setMerkleTreeRoot(merkleTreeRoot);
+        return block;
+    }
+
+    private static List<Transaction> obtainTransactionList(BlockChainDataBase blockChainDataBase, BlockDTO blockDTO) {
         List<Transaction> transactionList = new ArrayList<>();
         List<TransactionDTO> transactionDtoList = blockDTO.getTransactionDtoList();
         if(transactionDtoList != null){
@@ -41,30 +61,9 @@ public class NodeTransportDtoTool {
                 transactionList.add(transaction);
             }
         }
-
-        //求上一个区块的hash
-        String previousBlockHash;
-        long height = blockDTO.getHeight();
-        if(LongUtil.isEquals(height,LongUtil.ONE)){
-            previousBlockHash = GlobalSetting.GenesisBlock.HASH;
-        } else {
-            Block previousBlock = blockChainDataBase.queryBlockByBlockHeight(height-LongUtil.ONE);
-            if(previousBlock == null){
-                throw new ClassCastException("上一个区块不应该为null");
-            }
-            previousBlockHash = previousBlock.getHash();
-        }
-
-        Block block = new Block();
-        block.setTimestamp(blockDTO.getTimestamp());
-        block.setPreviousBlockHash(previousBlockHash);
-        block.setHeight(blockDTO.getHeight());
-        block.setTransactions(transactionList);
-        block.setMerkleTreeRoot(BlockTool.calculateBlockMerkleTreeRoot(block));
-        block.setNonce(blockDTO.getNonce());
-        block.setHash(BlockTool.calculateBlockHash(block));
-        return block;
+        return transactionList;
     }
+
     /**
      * 类型转换
      */
@@ -258,17 +257,4 @@ public class NodeTransportDtoTool {
         return gson.fromJson(stringBlockDTO,BlockDTO.class);
     }
 
-    /**
-     * 编码 SynchronizerBlock
-     */
-    public static String encode(SynchronizerBlock synchronizerBlock) {
-        return gson.toJson(synchronizerBlock);
-    }
-
-    /**
-     * 解码 SynchronizerBlock
-     */
-    public static SynchronizerBlock decodeToSynchronizerBlockDTO(String stringSynchronizerBlockDTO) {
-        return gson.fromJson(stringSynchronizerBlockDTO, SynchronizerBlock.class);
-    }
 }

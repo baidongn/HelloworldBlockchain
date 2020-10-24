@@ -13,6 +13,8 @@ public class BlockDTO implements Serializable {
 
     //区块产生的时间戳
     private long timestamp;
+    //上一个区块的哈希
+    private String previousBlockHash;
     //区块里的交易
     private List<TransactionDTO> transactionDtoList;
     //共识值
@@ -46,5 +48,14 @@ public class BlockDTO implements Serializable {
     public void setNonce(long nonce) {
         this.nonce = nonce;
     }
+
+    public String getPreviousBlockHash() {
+        return previousBlockHash;
+    }
+
+    public void setPreviousBlockHash(String previousBlockHash) {
+        this.previousBlockHash = previousBlockHash;
+    }
+
     //endregion
 }

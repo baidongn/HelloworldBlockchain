@@ -1,11 +1,11 @@
 package com.xingkaichun.helloworldblockchain.core.impl;
 
 import com.xingkaichun.helloworldblockchain.core.SynchronizerDataBase;
-import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlock;
 import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
 import com.xingkaichun.helloworldblockchain.core.utils.FileUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.JdbcUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
+import com.xingkaichun.helloworldblockchain.netcore.transport.dto.BlockDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
     }
 
     @Override
-    public boolean addBlockDTO(String nodeId, SynchronizerBlock synchronizerBlock) {
+    public boolean addBlockDTO(String nodeId, long blockHeight, BlockDTO blockDTO) {
 
         String sql = "INSERT INTO DATA (nodeId,blockHeight,blockDto,insertTime) " +
                 "VALUES (?,?,?,?);";
@@ -61,8 +61,8 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
         try {
             preparedStatement = connection().prepareStatement(sql);
             preparedStatement.setString(1,nodeId);
-            preparedStatement.setLong(2, synchronizerBlock.getHeight());
-            preparedStatement.setString(3, NodeTransportDtoTool.encode(synchronizerBlock));
+            preparedStatement.setLong(2, blockHeight);
+            preparedStatement.setString(3, NodeTransportDtoTool.encode(blockDTO));
             preparedStatement.setLong(4,System.currentTimeMillis());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -118,7 +118,7 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
     }
 
     @Override
-    public SynchronizerBlock getBlockDto(String nodeId, long blockHeight) {
+    public BlockDTO getBlockDto(String nodeId, long blockHeight) {
         String selectBlockDataSql = "SELECT * FROM DATA WHERE nodeId = ? and blockHeight=?";
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -128,8 +128,8 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
             preparedStatement.setLong(2,blockHeight);
             resultSet = preparedStatement.executeQuery();
             if (resultSet.next()){
-                String stringSynchronizerBlockDTO = resultSet.getString("blockDto");
-                return NodeTransportDtoTool.decodeToSynchronizerBlockDTO(stringSynchronizerBlockDTO);
+                String blockDTO = resultSet.getString("blockDto");
+                return NodeTransportDtoTool.decodeToBlockDTO(blockDTO);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
