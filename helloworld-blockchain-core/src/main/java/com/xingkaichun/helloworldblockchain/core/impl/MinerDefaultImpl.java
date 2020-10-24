@@ -3,6 +3,7 @@ package com.xingkaichun.helloworldblockchain.core.impl;
 import com.xingkaichun.helloworldblockchain.core.BlockChainDataBase;
 import com.xingkaichun.helloworldblockchain.core.Miner;
 import com.xingkaichun.helloworldblockchain.core.MinerTransactionDtoDataBase;
+import com.xingkaichun.helloworldblockchain.core.Wallet;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionInput;
@@ -13,6 +14,7 @@ import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
 import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
 import com.xingkaichun.helloworldblockchain.core.tools.TransactionTool;
 import com.xingkaichun.helloworldblockchain.core.utils.ThreadUtil;
+import com.xingkaichun.helloworldblockchain.crypto.model.Account;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.TransactionDTO;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 import org.slf4j.Logger;
@@ -33,8 +35,8 @@ public class MinerDefaultImpl extends Miner {
     //挖矿开关:默认打开挖矿的开关
     private boolean mineOption = true;
 
-    public MinerDefaultImpl(BlockChainDataBase blockChainDataBase, MinerTransactionDtoDataBase minerTransactionDtoDataBase, String minerAddress) {
-        super(minerAddress,blockChainDataBase,minerTransactionDtoDataBase);
+    public MinerDefaultImpl(Wallet wallet, BlockChainDataBase blockChainDataBase, MinerTransactionDtoDataBase minerTransactionDtoDataBase) {
+        super(wallet,blockChainDataBase,minerTransactionDtoDataBase);
     }
     //endregion
 
@@ -46,8 +48,8 @@ public class MinerDefaultImpl extends Miner {
             if(!mineOption){
                 continue;
             }
-
-            Block block = obtainMiningBlock(blockChainDataBase);
+            Account minerAccount = wallet.createAccount();
+            Block block = obtainMiningBlock(blockChainDataBase,minerAccount);
             //随机nonce
             long nonce = new Random(Long.MAX_VALUE).nextLong();
             long startTimestamp = System.currentTimeMillis();
@@ -56,7 +58,7 @@ public class MinerDefaultImpl extends Miner {
                     break;
                 }
                 //在挖矿的期间，可能收集到新的交易。每隔一定的时间，重新组装挖矿中的block，组装新的挖矿中的block的时候，可以考虑将新收集到交易放进挖矿中的block。
-                if(System.currentTimeMillis()-startTimestamp>1000*10){
+                if(System.currentTimeMillis()-startTimestamp> GlobalSetting.MinerConstant.MINE_TIMESTAMP_PER_ROUND){
                     break;
                 }
 
@@ -71,6 +73,8 @@ public class MinerDefaultImpl extends Miner {
                         logger.info("挖矿成功，但是放入区块链失败。");
                         continue;
                     }
+                    //将账户放入钱包
+                    wallet.addAccount(minerAccount);
                     break;
                 }
                 nonce++;
@@ -96,7 +100,7 @@ public class MinerDefaultImpl extends Miner {
     /**
      * 获取挖矿中的区块对象
      */
-    private Block obtainMiningBlock(BlockChainDataBase blockChainDataBase) {
+    private Block obtainMiningBlock(BlockChainDataBase blockChainDataBase, Account minerAccount) {
         List<TransactionDTO> forMineBlockTransactionDtoList = minerTransactionDtoDataBase.selectTransactionDtoList(1,10000);
         List<Transaction> forMineBlockTransactionList = new ArrayList<>();
         if(forMineBlockTransactionDtoList != null){
@@ -112,7 +116,7 @@ public class MinerDefaultImpl extends Miner {
             }
         }
         removeExceptionTransaction_PointOfBlockView(blockChainDataBase,forMineBlockTransactionList);
-        Block nextMineBlock = buildNextMineBlock(blockChainDataBase,forMineBlockTransactionList);
+        Block nextMineBlock = buildNextMineBlock(blockChainDataBase,forMineBlockTransactionList,minerAccount);
         return nextMineBlock;
     }
 
@@ -125,7 +129,7 @@ public class MinerDefaultImpl extends Miner {
         }
         removeExceptionTransaction_PointOfTransactionView(blockChainDataBase,packingTransactionList);
 
-        Set<String> hashSet = new HashSet<>();
+        Set<String> idSet = new HashSet<>();
         Iterator<Transaction> iterator = packingTransactionList.iterator();
         while (iterator.hasNext()){
             Transaction transaction = iterator.next();
@@ -133,23 +137,12 @@ public class MinerDefaultImpl extends Miner {
             boolean isError = false;
             //校验双花：同一张钱不能被两次交易同时使用【同一个UTXO不允许出现在不同的交易中】
             for(TransactionInput input:inputs){
-                String unspendTransactionOutputHash = input.getUnspendTransactionOutput().getTransactionOutputHash();
-                if(hashSet.contains(unspendTransactionOutputHash)){
+                String unspendTransactionOutputId = input.getUnspendTransactionOutput().getTransactionOutputId();
+                if(idSet.contains(unspendTransactionOutputId)){
                     isError = true;
                     break;
                 }else {
-                    hashSet.add(unspendTransactionOutputHash);
-                }
-            }
-            //校验哈希，哈希不能重复使用
-            List<TransactionOutput> outputs = transaction.getOutputs();
-            for(TransactionOutput transactionOutput:outputs){
-                String transactionOutputHash = transactionOutput.getTransactionOutputHash();
-                if(hashSet.contains(transactionOutputHash)){
-                    isError = true;
-                    break;
-                }else {
-                    hashSet.add(transactionOutputHash);
+                    idSet.add(unspendTransactionOutputId);
                 }
             }
             if(isError){
@@ -180,22 +173,17 @@ public class MinerDefaultImpl extends Miner {
     }
 
     @Override
-    public Transaction buildMineAwardTransaction(long timestamp, BlockChainDataBase blockChainDataBase, Block block) {
+    public Transaction buildMineAwardTransaction(BlockChainDataBase blockChainDataBase, Account minerAccount, Block block) {
+        String address = minerAccount.getAddress();
+
         Transaction transaction = new Transaction();
-        transaction.setTimestamp(timestamp);
         transaction.setTransactionType(TransactionType.COINBASE);
-        transaction.setInputs(null);
 
         ArrayList<TransactionOutput> outputs = new ArrayList<>();
-        long award = blockChainDataBase.getIncentive().mineAward(block);
-
         TransactionOutput output = new TransactionOutput();
-        output.setTransactionOutputSequence(1);
-        output.setTimestamp(timestamp);
-        output.setAddress(minerAddress);
-        output.setValue(award);
-        output.setScriptLock(StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(minerAddress));
-        output.setTransactionOutputHash(TransactionTool.calculateTransactionOutputHash(transaction,output));
+        output.setAddress(address);
+        output.setValue(blockChainDataBase.getIncentive().mineAward(block));
+        output.setScriptLock(StackBasedVirtualMachine.createPayToPublicKeyHashOutputScript(address));
         outputs.add(output);
 
         transaction.setOutputs(outputs);
@@ -206,7 +194,7 @@ public class MinerDefaultImpl extends Miner {
     /**
      * 构建挖矿区块
      */
-    public Block buildNextMineBlock(BlockChainDataBase blockChainDataBase, List<Transaction> packingTransactionList) {
+    public Block buildNextMineBlock(BlockChainDataBase blockChainDataBase, List<Transaction> packingTransactionList, Account minerAcount) {
         long timestamp = System.currentTimeMillis();
 
         Block tailBlock = blockChainDataBase.queryTailBlock();
@@ -215,8 +203,8 @@ public class MinerDefaultImpl extends Miner {
         nonNonceBlock.setTimestamp(timestamp);
 
         if(tailBlock == null){
-            nonNonceBlock.setHeight(GlobalSetting.GenesisBlockConstant.FIRST_BLOCK_HEIGHT);
-            nonNonceBlock.setPreviousBlockHash(GlobalSetting.GenesisBlockConstant.FIRST_BLOCK_PREVIOUS_HASH);
+            nonNonceBlock.setHeight(GlobalSetting.GenesisBlock.HEIGHT +1);
+            nonNonceBlock.setPreviousBlockHash(GlobalSetting.GenesisBlock.HASH);
         } else {
             nonNonceBlock.setHeight(tailBlock.getHeight()+1);
             nonNonceBlock.setPreviousBlockHash(tailBlock.getHash());
@@ -224,7 +212,7 @@ public class MinerDefaultImpl extends Miner {
         nonNonceBlock.setTransactions(packingTransactionList);
 
         //创建挖矿奖励交易
-        Transaction mineAwardTransaction =  buildMineAwardTransaction(timestamp,blockChainDataBase,nonNonceBlock);
+        Transaction mineAwardTransaction =  buildMineAwardTransaction(blockChainDataBase,minerAcount,nonNonceBlock);
         packingTransactionList.add(0,mineAwardTransaction);
 
 

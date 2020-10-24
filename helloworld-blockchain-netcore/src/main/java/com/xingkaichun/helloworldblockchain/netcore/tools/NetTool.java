@@ -1,7 +1,6 @@
 package com.xingkaichun.helloworldblockchain.netcore.tools;
 
 import com.google.gson.Gson;
-import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +36,7 @@ public class NetTool {
             connection.setReadTimeout(3000);
             connection.setConnectTimeout(3000);
             connection.connect();
-            out = new OutputStreamWriter(connection.getOutputStream(), GlobalSetting.GLOBAL_CHARSET);
+            out = new OutputStreamWriter(connection.getOutputStream());
             out.append(gson.toJson(requestBody));
             out.flush();
             out.close();
@@ -50,7 +49,7 @@ public class NetTool {
                 is = connection.getErrorStream();
             }
             StringBuilder data = new StringBuilder();
-            br = new BufferedReader(new InputStreamReader(is, GlobalSetting.GLOBAL_CHARSET));
+            br = new BufferedReader(new InputStreamReader(is));
             String line;
             while ( (line = br.readLine()) != null) {
                 data.append(line);

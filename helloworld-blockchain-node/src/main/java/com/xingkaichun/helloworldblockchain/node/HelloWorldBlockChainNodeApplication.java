@@ -1,12 +1,8 @@
 package com.xingkaichun.helloworldblockchain.node;
 
-import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
 import com.xingkaichun.helloworldblockchain.core.tools.ResourcePathTool;
 import com.xingkaichun.helloworldblockchain.netcore.NetBlockchainCore;
 import com.xingkaichun.helloworldblockchain.netcore.NetBlockchainCoreFactory;
-import com.xingkaichun.helloworldblockchain.netcore.service.BlockChainCoreService;
-import com.xingkaichun.helloworldblockchain.netcore.service.ConfigurationService;
-import com.xingkaichun.helloworldblockchain.netcore.service.NodeService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -32,37 +28,11 @@ public class HelloWorldBlockChainNodeApplication {
 		SpringApplication.run(HelloWorldBlockChainNodeApplication.class, args);
 	}
 
-	@Bean
-	public NetBlockchainCoreFactory netBlockchainCoreFactory() {
-		NetBlockchainCoreFactory netBlockchainCoreFactory = new NetBlockchainCoreFactory(ResourcePathTool.getDataRootPath(blockchainDataPath),8444);
-		return netBlockchainCoreFactory;
-	}
 
 	@Bean
-	public NetBlockchainCore buildNetBlockchainCore(NetBlockchainCoreFactory netBlockchainCoreFactory) {
-		NetBlockchainCore netBlockchainCore = netBlockchainCoreFactory.getNetBlockchainCore();
+	public NetBlockchainCore buildNetBlockchainCore() {
+		NetBlockchainCore netBlockchainCore = NetBlockchainCoreFactory.createNetBlockchainCore(ResourcePathTool.getDataRootPath(blockchainDataPath),8444);
 		netBlockchainCore.start();
 		return netBlockchainCore;
 	}
-
-	@Bean
-	public BlockChainCore buildBlockChainCore(NetBlockchainCoreFactory netBlockchainCoreFactory){
-		return netBlockchainCoreFactory.getBlockChainCore();
-	}
-
-	@Bean
-	public ConfigurationService buildConfigurationService(NetBlockchainCoreFactory netBlockchainCoreFactory){
-		return netBlockchainCoreFactory.getConfigurationService();
-	}
-
-	@Bean
-	public BlockChainCoreService buildBlockChainCoreService(NetBlockchainCoreFactory netBlockchainCoreFactory){
-		return netBlockchainCoreFactory.getBlockChainCoreService();
-	}
-
-	@Bean
-	public NodeService buildNodeService(NetBlockchainCoreFactory netBlockchainCoreFactory){
-		return netBlockchainCoreFactory.getNodeService();
-	}
-
 }

@@ -6,19 +6,12 @@ import com.xingkaichun.helloworldblockchain.core.Consensus;
 import com.xingkaichun.helloworldblockchain.core.Incentive;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.enums.BlockChainActionEnum;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionInput;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
-import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionType;
-import com.xingkaichun.helloworldblockchain.core.tools.BlockChainDataBaseKeyTool;
-import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
-import com.xingkaichun.helloworldblockchain.core.tools.TextSizeRestrictionTool;
-import com.xingkaichun.helloworldblockchain.core.tools.TransactionTool;
+import com.xingkaichun.helloworldblockchain.core.model.transaction.*;
+import com.xingkaichun.helloworldblockchain.core.tools.*;
 import com.xingkaichun.helloworldblockchain.core.utils.EncodeDecodeUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LevelDBUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
-import com.xingkaichun.helloworldblockchain.util.ByteUtil;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.WriteBatch;
@@ -45,7 +38,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
     //region 变量与构造函数
     private static final Logger logger = LoggerFactory.getLogger(BlockChainDataBaseDefaultImpl.class);
 
-    private static final String BlockChain_DataBase_DirectName = "BlockChainDataBase";
+    private static final String BLOCKCHAIN_DATABASE_DIRECT_NAME = "BlockChainDataBase";
     //区块链数据库
     private DB blockChainDB;
 
@@ -57,7 +50,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
 
     public BlockChainDataBaseDefaultImpl(String blockchainDataPath,Incentive incentive,Consensus consensus) {
         super(consensus,incentive);
-        File blockChainDBFile = new File(blockchainDataPath,BlockChain_DataBase_DirectName);
+        File blockChainDBFile = new File(blockchainDataPath,BLOCKCHAIN_DATABASE_DIRECT_NAME);
         this.blockChainDB = LevelDBUtil.createDB(blockChainDBFile);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LevelDBUtil.closeDB(blockChainDB);
@@ -132,74 +125,54 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
             return false;
         }
 
-        //校验区块的存储容量是否合法
-        if(!TextSizeRestrictionTool.isBlockStorageCapacityLegal(block)){
-            logger.debug("区块存储容量非法。");
+        //校验区块的结构
+        if(!StructureSizeTool.isBlockStructureLegal(block)){
+            logger.debug("区块数据异常，请校验区块的结构。");
+            return false;
+        }
+        //校验区块的存储容量
+        if(!StructureSizeTool.isBlockStorageCapacityLegal(block)){
+            logger.debug("区块数据异常，请校验区块的大小。");
             return false;
         }
 
         Block previousBlock = queryTailBlock();
+        //校验区块写入的属性值
+        if(!BlockPropertyTool.isWritePropertiesRight(previousBlock,block)){
+            logger.debug("区块校验失败：区块的属性写入值与实际计算结果不一致。");
+            return false;
+        }
+
+        //校验业务
         //校验区块时间
         if(!BlockTool.isBlockTimestampLegal(previousBlock,block)){
             logger.debug("区块生成的时间太滞后。");
             return false;
         }
-        //校验区块前区块哈希
-        if(!BlockTool.isBlockPreviousBlockHashLegal(previousBlock,block)){
-            logger.debug("区块生成的时间太滞后。");
+        //新产生的哈希是否合法
+        if(!isNewHashLegal(block)){
+            logger.debug("区块数据异常，区块中新产生的哈希异常。");
             return false;
         }
-        //校验区块高度
-        if(!BlockTool.isBlockHeightLegal(previousBlock,block)){
-            logger.debug("区块生成的时间太滞后。");
-            return false;
-        }
-
-        //校验区块写入的属性值
-        if(!BlockTool.isBlockWriteRight(block)){
-            logger.debug("区块校验失败：区块的属性写入值与实际计算结果不一致。");
-            return false;
-        }
-
         //双花校验
-        if(BlockTool.isDoubleSpendAttackHappen(block)){
+        if(isDoubleSpendAttackHappen(block)){
             logger.debug("区块数据异常，检测到双花攻击。");
             return false;
         }
-
-        //校验哈希作为主键的正确性
-        //新产生的Hash不能有重复
-        if(!BlockTool.isNewGenerateHashHappenTwiceAndMoreInnerBlock(block)){
-            logger.debug("区块数据异常，区块中占用的部分主键已经被使用了。");
-            return false;
-        }
-        //新产生的Hash被使用过
-        if(!isHashUsed(block)){
-            logger.debug("区块数据异常，区块中占用的部分主键已经被使用了。");
-            return false;
-        }
-
         //校验共识
-        boolean isReachConsensus = consensus.isReachConsensus(this,block);
-        if(!isReachConsensus){
+        if(!isReachConsensus(block)){
+            logger.debug("区块数据异常，未满足共识规则。");
             return false;
         }
-
-        //激励校验
-        if(!BlockTool.isIncentiveRight(incentive.mineAward(block),block)){
-            logger.debug("区块数据异常，激励异常。");
-            return false;
-        }
-
-        //校验交易类型的次序
-        if(!BlockTool.isBlockTransactionTypeRight(block)){
-            logger.debug("区块数据异常，区块有且只有一笔交易是CoinBase，且CoinBase交易是区块的第一笔交易。");
+        //校验激励
+        if(!isIncentiveRight(block)){
+            logger.debug("区块数据异常，未满足共识规则。");
             return false;
         }
 
         //从交易角度校验每一笔交易
-        for(Transaction tx : block.getTransactions()){
-            boolean transactionCanAddToNextBlock = isTransactionCanAddToNextBlock(block,tx);
+        for(Transaction transaction : block.getTransactions()){
+            boolean transactionCanAddToNextBlock = isTransactionCanAddToNextBlock(block,transaction);
             if(!transactionCanAddToNextBlock){
                 logger.debug("区块数据异常，交易异常。");
                 return false;
@@ -207,115 +180,66 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         }
         return true;
     }
+
     @Override
     public boolean isTransactionCanAddToNextBlock(Block block, Transaction transaction) {
-        //校验交易类型
-        TransactionType transactionType = transaction.getTransactionType();
-        if(transactionType != TransactionType.NORMAL
-                && transactionType != TransactionType.COINBASE)
-        {
-            logger.debug("交易校验失败：不能识别的交易类型。");
+        //校验交易的结构
+        if(!StructureSizeTool.isTransactionStructureLegal(transaction)){
+            logger.debug("交易数据异常，请校验交易的结构。");
             return false;
         }
-        if(transactionType == TransactionType.COINBASE){
-            if(block == null){
-                logger.debug("交易校验失败：验证激励交易必须区块参数不能为空。");
-                return false;
-            }
-        }
-        //业务校验
-        //交易金额相关
-        if(!TransactionTool.isTransactionAmountLegal(transaction)){
-            logger.debug("交易金额不合法");
-            return false;
-        }
-
-        //校验交易存储
-        if(!TextSizeRestrictionTool.isTransactionStorageCapacityLegal(transaction)){
-            logger.debug("请校验交易的大小");
+        //校验交易的存储容量
+        if(!StructureSizeTool.isTransactionStorageCapacityLegal(transaction)){
+            logger.debug("交易数据异常，请校验交易的大小。");
             return false;
         }
 
         //校验交易的属性是否与计算得来的一致
-        if(!BlockTool.isTransactionWriteRight(block,transaction)){
+        if(!TransactionPropertyTool.isWritePropertiesRight(transaction)){
             return false;
         }
 
-        //验证交易时间
-        if(!BlockTool.isTransactionTimestampLegal(block,transaction)){
-            logger.debug("请校验交易的时间");
-            return false;
-        }
 
-        //检查交易输入是否都是未花费交易输出
-        if(!isTransactionInputFromUnspendTransactionOutput(transaction)){
-            logger.debug("区块数据异常：交易输入有不是未花费交易输出。");
+        //业务校验
+        //校验交易金额
+        if(!TransactionTool.isTransactionAmountLegal(transaction)){
+            logger.debug("交易金额不合法");
             return false;
         }
-
-        //校验：是否双花
-        if(BlockTool.isDoubleSpendAttackHappen(transaction)){
-            logger.debug("区块数据异常，检测到双花攻击。");
+        //校验是否双花
+        if(isDoubleSpendAttackHappen(transaction)){
+            logger.debug("交易数据异常，检测到双花攻击。");
             return false;
         }
-
-        //校验哈希作为主键的正确性
-        //新产生的Hash不能有重复
-        if(!BlockTool.isNewGenerateHashHappenTwiceAndMoreInnerTransaction(transaction)){
-            logger.debug("校验数据异常，校验中占用的部分主键已经被使用了。");
-            return false;
-        }
-        //新产生的Hash不能被使用过
-        if(!isHashUsed(transaction)){
-            logger.debug("校验数据异常，校验中占用的部分主键已经被使用了。");
+        //新产生的哈希是否合法
+        if(!isNewHashLegal(transaction)){
+            logger.debug("区块数据异常，区块中新产生的哈希异常。");
             return false;
         }
 
 
         //根据交易类型，做进一步的校验
         if(transaction.getTransactionType() == TransactionType.COINBASE){
-            /*
-             * 激励交易输出可以为空，这时代表矿工放弃了奖励、或者依据规则挖矿激励就是零奖励。
-             */
-            List<TransactionInput> inputs = transaction.getInputs();
-            if(inputs != null && inputs.size() != 0){
-                logger.debug("交易校验失败：激励交易不能有交易输入。");
-                return false;
-            }
-            //激励校验
-            if(!TransactionTool.isIncentiveRight(incentive.mineAward(block),transaction)){
+            //校验激励
+            if(!isIncentiveRight(block,transaction)){
                 logger.debug("区块数据异常，激励异常。");
                 return false;
             }
             return true;
         } else if(transaction.getTransactionType() == TransactionType.NORMAL){
-            /*
-             * 普通交易输出可以为空，这时代表用户将自己的币扔进了黑洞，强制销毁了。
-             */
-            List<TransactionInput> inputs = transaction.getInputs();
-            if(inputs == null || inputs.size() == 0){
-                logger.debug("交易校验失败：普通交易必须有交易输入。");
+            //交易输入必须要大于交易输出
+            if(!TransactionTool.isTransactionInputsGreatEqualThanOutputsRight(transaction)) {
+                logger.debug("交易校验失败：交易输入必须要大于交易输出。");
                 return false;
             }
-            long inputsValue = TransactionTool.getInputsValue(transaction);
-            long outputsValue = TransactionTool.getOutputsValue(transaction);
-            if(inputsValue < outputsValue) {
-                logger.debug("交易校验失败：交易的输入必须大于等于交易的输出。不合法的交易。");
+            //转账手续费
+            if(!TransactionTool.isTransactionFeeRight(transaction)) {
+                logger.debug("交易校验失败：手续费不正确。");
                 return false;
             }
-            //交易手续费
-            if((inputsValue - outputsValue) < GlobalSetting.TransactionConstant.MIN_TRANSACTION_FEE){
-                logger.debug(String.format("交易校验失败：交易手续费不能小于%s。不合法的交易。", GlobalSetting.TransactionConstant.MIN_TRANSACTION_FEE));
-                return false;
-            }
-            //脚本脚本
-            try{
-                if(!TransactionTool.verifyScript(transaction)) {
-                    logger.debug("交易校验失败：校验交易签名失败。不合法的交易。");
-                    return false;
-                }
-            }catch (Exception e){
-                logger.debug("交易校验失败：校验交易签名失败。不合法的交易。",e);
+            //脚本
+            if(!TransactionTool.verifyScript(transaction)) {
+                logger.debug("交易校验失败：交易脚本钥匙解锁交易脚本锁异常。");
                 return false;
             }
             return true;
@@ -336,7 +260,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
             //区块链中没有区块，高度默认为0。
             return LongUtil.ZERO;
         }
-        return ByteUtil.bytesToLong(bytesBlockChainHeight);
+        return LevelDBUtil.bytesToLong(bytesBlockChainHeight);
     }
 
     @Override
@@ -345,16 +269,16 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         if(byteTotalTransactionQuantity == null){
             return LongUtil.ZERO;
         }
-        return ByteUtil.bytesToLong(byteTotalTransactionQuantity);
+        return LevelDBUtil.bytesToLong(byteTotalTransactionQuantity);
     }
 
     @Override
     public long queryBlockHeightByBlockHash(String blockHash) {
-        byte[] bytesBlockHashToBlockHeightKey = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildBlockHashToBlockHeightKey(blockHash));
-        if(bytesBlockHashToBlockHeightKey == null){
+        byte[] bytesBlockHeight = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildBlockHashToBlockHeightKey(blockHash));
+        if(bytesBlockHeight == null){
             return LongUtil.ZERO;
         }
-        return ByteUtil.bytesToLong(bytesBlockHashToBlockHeightKey);
+        return LevelDBUtil.bytesToLong(bytesBlockHeight);
     }
     //endregion
 
@@ -418,8 +342,8 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
 
 
     //region 交易输出查询
-    public TransactionOutput queryTransactionOutputByTransactionOutputHash(String transactionOutputHash) {
-        byte[] bytesTransactionOutput = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildTransactionOutputHashToTransactionOutputKey(transactionOutputHash));
+    public TransactionOutput queryTransactionOutputByTransactionOutputId(TransactionOutputId transactionOutputId) {
+        byte[] bytesTransactionOutput = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildTransactionOutputIdToTransactionOutputKey(transactionOutputId));
         if(bytesTransactionOutput == null){
             return null;
         }
@@ -427,8 +351,8 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
     }
 
     @Override
-    public TransactionOutput queryUnspendTransactionOutputByTransactionOutputHash(String unspendTransactionOutputHash) {
-        byte[] bytesUtxo = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildUnspendTransactionOutputHashToUnspendTransactionOutputKey(unspendTransactionOutputHash));
+    public TransactionOutput queryUnspendTransactionOutputByTransactionOutputId(TransactionOutputId transactionOutputId) {
+        byte[] bytesUtxo = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(transactionOutputId));
         if(bytesUtxo == null){
             return null;
         }
@@ -439,7 +363,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
     public List<TransactionOutput> queryTransactionOutputListByAddress(String address,long from,long size) {
         List<TransactionOutput> transactionOutputList = new ArrayList<>();
         DBIterator iterator = blockChainDB.iterator();
-        byte[] addressToTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToTransactionOuputListKey(address);
+        byte[] addressToTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToTransactionOutputListKey(address);
         int currentFrom = 0;
         int currentSize = 0;
         for (iterator.seek(addressToTransactionOutputListKey); iterator.hasNext(); iterator.next()) {
@@ -521,23 +445,23 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         long transactionSize = queryTransactionSize();
         byte[] totalTransactionQuantityKey = BlockChainDataBaseKeyTool.buildTotalTransactionQuantityKey();
         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-            writeBatch.put(totalTransactionQuantityKey, ByteUtil.longToBytes(transactionSize + BlockTool.getTransactionCount(block)));
+            writeBatch.put(totalTransactionQuantityKey, LevelDBUtil.longToBytes(transactionSize + BlockTool.getTransactionCount(block)));
         }else{
-            writeBatch.put(totalTransactionQuantityKey, ByteUtil.longToBytes(transactionSize - BlockTool.getTransactionCount(block)));
+            writeBatch.put(totalTransactionQuantityKey, LevelDBUtil.longToBytes(transactionSize - BlockTool.getTransactionCount(block)));
         }
         //存储区块Hash到区块高度的映射
         byte[] blockHashBlockHeightKey = BlockChainDataBaseKeyTool.buildBlockHashToBlockHeightKey(block.getHash());
         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-            writeBatch.put(blockHashBlockHeightKey, ByteUtil.longToBytes(block.getHeight()));
+            writeBatch.put(blockHashBlockHeightKey, LevelDBUtil.longToBytes(block.getHeight()));
         }else{
             writeBatch.delete(blockHashBlockHeightKey);
         }
         //存储区块链的高度
         byte[] blockChainHeightKey = BlockChainDataBaseKeyTool.buildBlockChainHeightKey();
         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-            writeBatch.put(blockChainHeightKey,ByteUtil.longToBytes(block.getHeight()));
+            writeBatch.put(blockChainHeightKey,LevelDBUtil.longToBytes(block.getHeight()));
         }else{
-            writeBatch.put(blockChainHeightKey,ByteUtil.longToBytes(block.getHeight()-1));
+            writeBatch.put(blockChainHeightKey,LevelDBUtil.longToBytes(block.getHeight()-1));
         }
 
         List<Transaction> transactionList = block.getTransactions();
@@ -559,11 +483,11 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                     for(TransactionInput txInput:inputs){
                         //存储未花费交易输出哈希到未花费交易输出的映射
                         TransactionOutput unspendTransactionOutput = txInput.getUnspendTransactionOutput();
-                        byte[] unspendTransactionOutputHashToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputHashToUnspendTransactionOutputKey(unspendTransactionOutput.getTransactionOutputHash());
+                        byte[] unspendTransactionOutputIdToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(unspendTransactionOutput);
                         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-                            writeBatch.delete(unspendTransactionOutputHashToUnspendTransactionOutputKey);
+                            writeBatch.delete(unspendTransactionOutputIdToUnspendTransactionOutputKey);
                         } else {
-                            writeBatch.put(unspendTransactionOutputHashToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(unspendTransactionOutput));
+                            writeBatch.put(unspendTransactionOutputIdToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(unspendTransactionOutput));
                         }
                     }
                 }
@@ -571,15 +495,15 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                 if(outputs != null){
                     for(TransactionOutput output:outputs){
                         //存储交易输出哈希到交易输出的映射
-                        byte[] transactionOutputHashToTransactionOutputKey = BlockChainDataBaseKeyTool.buildTransactionOutputHashToTransactionOutputKey(output.getTransactionOutputHash());
+                        byte[] transactionOutputIdToTransactionOutputKey = BlockChainDataBaseKeyTool.buildTransactionOutputIdToTransactionOutputKey(output);
                         //存储未花费交易输出哈希到未花费交易输出的映射
-                        byte[] unspendTransactionOutputHashToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputHashToUnspendTransactionOutputKey(output.getTransactionOutputHash());
+                        byte[] unspendTransactionOutputIdToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(output);
                         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-                            writeBatch.put(transactionOutputHashToTransactionOutputKey, EncodeDecodeUtil.encode(output));
-                            writeBatch.put(unspendTransactionOutputHashToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(output));
+                            writeBatch.put(transactionOutputIdToTransactionOutputKey, EncodeDecodeUtil.encode(output));
+                            writeBatch.put(unspendTransactionOutputIdToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(output));
                         } else {
-                            writeBatch.delete(transactionOutputHashToTransactionOutputKey);
-                            writeBatch.delete(unspendTransactionOutputHashToUnspendTransactionOutputKey);
+                            writeBatch.delete(transactionOutputIdToTransactionOutputKey);
+                            writeBatch.delete(unspendTransactionOutputIdToUnspendTransactionOutputKey);
                         }
                     }
                 }
@@ -606,17 +530,6 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                     writeBatch.put(transactionHashKey, transactionHashKey);
                 } else {
                     writeBatch.delete(transactionHashKey);
-                }
-                List<TransactionOutput> outputs = transaction.getOutputs();
-                if(outputs != null){
-                    for(TransactionOutput output:outputs){
-                        byte[] transactionOutputHashKey = BlockChainDataBaseKeyTool.buildHashKey(output.getTransactionOutputHash());
-                        if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
-                            writeBatch.put(transactionOutputHashKey, transactionOutputHashKey);
-                        } else {
-                            writeBatch.delete(transactionOutputHashKey);
-                        }
-                    }
                 }
             }
         }
@@ -650,6 +563,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                     for (int i=0; i <outputs.size(); i++){
                         TransactionOutput transactionOutput = outputs.get(i);
                         transactionOutput.setBlockHeight(blockHeight);
+                        transactionOutput.setTransactionHash(transaction.getTransactionHash());
                         transactionOutput.setTransactionOutputSequence(i+LongUtil.ONE);
                         transactionOutput.setTransactionSequenceNumberInBlock(transaction.getTransactionSequenceNumberInBlock());
                     }
@@ -681,7 +595,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
             List<TransactionOutput> outputs = transaction.getOutputs();
             if(outputs != null){
                 for (TransactionOutput transactionOutput:outputs){
-                    byte[] addressToTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToTransactionOuputListKey(transactionOutput);
+                    byte[] addressToTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToTransactionOutputListKey(transactionOutput);
                     byte[] addressToUnspendTransactionOutputListKey = BlockChainDataBaseKeyTool.buildAddressToUnspendTransactionOutputListKey(transactionOutput);
                     if(blockChainActionEnum == BlockChainActionEnum.ADD_BLOCK){
                         byte[] byteTransactionOutput = EncodeDecodeUtil.encode(transactionOutput);
@@ -698,8 +612,6 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
     //endregion
 
 
-
-    //region 私有方法
     /**
      * 检查交易输入是否都是未花费交易输出
      */
@@ -708,12 +620,34 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         if(inputs != null){
             for(TransactionInput transactionInput : inputs) {
                 TransactionOutput unspendTransactionOutput = transactionInput.getUnspendTransactionOutput();
-                String unspendTransactionOutputHash = unspendTransactionOutput.getTransactionOutputHash();
-                TransactionOutput transactionOutput = queryUnspendTransactionOutputByTransactionOutputHash(unspendTransactionOutputHash);
+                TransactionOutput transactionOutput = queryUnspendTransactionOutputByTransactionOutputId(unspendTransactionOutput);
                 if(transactionOutput == null){
+                    logger.debug("交易数据异常：交易输入不是未花费交易输出。");
                     return false;
                 }
             }
+        }
+        return true;
+    }
+
+
+    //region 新产生的哈希相关
+    /**
+     * 哈希是否已经被区块链系统使用了？
+     */
+    private boolean isHashUsed(String hash){
+        byte[] bytesHash = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildHashKey(hash));
+        return bytesHash != null;
+    }
+    /**
+     * 交易中新产生的哈希是否已经被区块链系统使用了？
+     */
+    private boolean isNewHashUsed(Transaction transaction) {
+        //校验交易Hash是否已经被使用了
+        String transactionHash = transaction.getTransactionHash();
+        if(isHashUsed(transactionHash)){
+            logger.debug("交易数据异常，交易Hash已经被使用了。");
+            return false;
         }
         return true;
     }
@@ -731,7 +665,7 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         List<Transaction> blockTransactions = block.getTransactions();
         if(blockTransactions != null){
             for(Transaction transaction:blockTransactions){
-                if(!isHashUsed(transaction)){
+                if(!isNewHashUsed(transaction)){
                     return false;
                 }
             }
@@ -739,34 +673,102 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         return true;
     }
     /**
-     * 交易中新产生的哈希是否已经被区块链系统使用了？
+     * 区块中新产生的哈希是否合法
      */
-    private boolean isHashUsed(Transaction transaction) {
-        //校验交易Hash是否已经被使用了
-        String transactionHash = transaction.getTransactionHash();
-        if(isHashUsed(transactionHash)){
-            logger.debug("交易数据异常，交易Hash已经被使用了。");
+    private boolean isNewHashLegal(Transaction transaction) {
+        //校验哈希作为主键的正确性
+        //新产生的Hash不能被使用过
+        if(!isNewHashUsed(transaction)){
+            logger.debug("校验数据异常，校验中占用的部分主键已经被使用了。");
             return false;
         }
-        //交易输出Hash是否已经被使用了
-        List<TransactionOutput> outputs = transaction.getOutputs();
-        if(outputs != null){
-            for(TransactionOutput transactionOutput : outputs) {
-                String transactionOutputHash = transactionOutput.getTransactionOutputHash();
-                if(isHashUsed(transactionOutputHash)){
-                    logger.debug("交易数据异常，交易输出Hash已经被使用了。");
-                    return false;
-                }
+        return true;
+    }
+    /**
+     * 区块中新产生的哈希是否合法
+     */
+    private boolean isNewHashLegal(Block block) {
+        //校验哈希作为主键的正确性
+        //新产生的哈希不能有重复
+        if(!BlockTool.isExistDuplicateNewHash(block)){
+            logger.debug("区块数据异常，区块中新产生的哈希有重复。");
+            return false;
+        }
+        //新产生的哈希不能被区块链使用过了
+        if(!isHashUsed(block)){
+            logger.debug("区块数据异常，区块中新产生的哈希已经早被区块链使用了。");
+            return false;
+        }
+        return true;
+    }
+    //endregion
+
+
+    //region 双花攻击
+    /**
+     * 是否有双花攻击
+     * 相关拓展：双花攻击 https://zhuanlan.zhihu.com/p/258952892
+     */
+    private boolean isDoubleSpendAttackHappen(Transaction transaction) {
+        //双花交易：交易内部存在重复的(未花费交易输出)
+        if(TransactionTool.isExistDuplicateTransactionInput(transaction)){
+            logger.debug("交易数据异常，检测到双花攻击。");
+            return true;
+        }
+        //双花交易：交易内部存在已经花费的(未花费交易输出)
+        if(!isTransactionInputFromUnspendTransactionOutput(transaction)){
+            logger.debug("交易数据异常：发生双花交易。");
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 是否有双花攻击
+     * 相关拓展：双花攻击 https://zhuanlan.zhihu.com/p/258952892
+     */
+    private boolean isDoubleSpendAttackHappen(Block block) {
+        //双花交易：区块内部存在重复的(未花费交易输出)
+        if(BlockTool.isExistDuplicateTransactionInput(block)){
+            logger.debug("区块数据异常：发生双花交易。");
+            return true;
+        }
+        //双花交易：区块内部存在已经花费的(未花费交易输出)
+        for(Transaction transaction : block.getTransactions()){
+            if(!isTransactionInputFromUnspendTransactionOutput(transaction)){
+                logger.debug("区块数据异常：发生双花交易。");
+                return true;
             }
+        }
+        return false;
+    }
+    //endregion
+
+    /**
+     * 激励交易正确吗？
+     */
+    private boolean isIncentiveRight(Block block, Transaction transaction) {
+        //激励校验
+        if(!TransactionTool.isIncentiveRight(incentive.mineAward(block),transaction)){
+            logger.debug("区块数据异常，激励异常。");
+            return false;
         }
         return true;
     }
     /**
-     * 哈希是否已经被区块链系统使用了？
+     * 区块激励正确吗？
      */
-    private boolean isHashUsed(String hash){
-        byte[] bytesHash = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildHashKey(hash));
-        return bytesHash != null;
+    private boolean isIncentiveRight(Block block) {
+        if(!BlockTool.isIncentiveRight(incentive.mineAward(block),block)){
+            logger.debug("区块数据异常，激励异常。");
+            return false;
+        }
+        return true;
     }
-    //endregion
+    /**
+     * 区块满足共识规则吗？
+     */
+    private boolean isReachConsensus(Block block) {
+        return consensus.isReachConsensus(this,block);
+    }
 }

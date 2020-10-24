@@ -8,6 +8,7 @@ import com.xingkaichun.helloworldblockchain.core.model.synchronizer.Synchronizer
 import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
 import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
+import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.ThreadUtil;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 import org.slf4j.Logger;
@@ -126,7 +127,7 @@ public class SynchronizerDefaultImpl extends Synchronizer {
             return;
         }
         if(targetBlockChainTailBlock == null){
-            Block block = temporaryBlockChainDataBase.queryBlockByBlockHeight(GlobalSetting.GenesisBlockConstant.FIRST_BLOCK_HEIGHT);
+            Block block = temporaryBlockChainDataBase.queryBlockByBlockHeight(GlobalSetting.GenesisBlock.HEIGHT +1);
             boolean isAddBlockToBlockChainSuccess = targetBlockChainDataBase.addBlock(block);
             if(!isAddBlockToBlockChainSuccess){
                 return;
@@ -150,7 +151,8 @@ public class SynchronizerDefaultImpl extends Synchronizer {
                 break;
             }
             Block temporaryBlock = temporaryBlockChainDataBase.queryBlockByBlockHeight(noForkBlockHeight);
-            if(targetBlock.getHash().equals(temporaryBlock.getHash()) && targetBlock.getPreviousBlockHash().equals(temporaryBlock.getPreviousBlockHash())){
+            if(StringUtil.isEquals(targetBlock.getHash(),temporaryBlock.getHash()) &&
+                    StringUtil.isEquals(targetBlock.getPreviousBlockHash(),temporaryBlock.getPreviousBlockHash())){
                 break;
             }
             targetBlockChainDataBase.removeTailBlock();

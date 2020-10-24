@@ -2,14 +2,13 @@ package com.xingkaichun.helloworldblockchain.node.controller;
 
 import com.google.common.base.Strings;
 import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
+import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
+import com.xingkaichun.helloworldblockchain.netcore.NetBlockchainCore;
 import com.xingkaichun.helloworldblockchain.netcore.dto.common.ServiceResult;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationDto;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationEnum;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.NodeDto;
-import com.xingkaichun.helloworldblockchain.netcore.service.BlockChainCoreService;
-import com.xingkaichun.helloworldblockchain.netcore.service.ConfigurationService;
-import com.xingkaichun.helloworldblockchain.netcore.service.NodeService;
 import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.AdminConsoleApiRoute;
 import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.request.*;
 import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.response.*;
@@ -36,16 +35,7 @@ public class AdminConsoleController {
     private static final Logger logger = LoggerFactory.getLogger(AdminConsoleController.class);
 
     @Autowired
-    private BlockChainCoreService blockChainCoreService;
-
-    @Autowired
-    private ConfigurationService configurationService;
-
-    @Autowired
-    private NodeService nodeService;
-
-    @Autowired
-    private BlockChainCore blockChainCore;
+    private NetBlockchainCore netBlockchainCore;
 
     /**
      * 矿工是否激活
@@ -54,7 +44,7 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.IS_MINER_ACTIVE,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<IsMinerActiveResponse> isMineActive(@RequestBody IsMinerActiveRequest request){
         try {
-            boolean isMineActive = blockChainCore.getMiner().isActive();
+            boolean isMineActive = getBlockChainCore().getMiner().isActive();
 
             IsMinerActiveResponse response = new IsMinerActiveResponse();
             response.setMinerInActiveState(isMineActive);
@@ -72,10 +62,10 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.ACTIVE_MINER,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<ActiveMinerResponse> activeMiner(@RequestBody ActiveMinerRequest request){
         try {
-            blockChainCore.getMiner().active();
+            getBlockChainCore().getMiner().active();
 
             ConfigurationDto configurationDto = new ConfigurationDto(ConfigurationEnum.IS_MINER_ACTIVE.name(),String.valueOf(true));
-            configurationService.setConfiguration(configurationDto);
+            netBlockchainCore.getConfigurationService().setConfiguration(configurationDto);
             ActiveMinerResponse response = new ActiveMinerResponse();
 
             response.setActiveMinerSuccess(true);
@@ -93,10 +83,10 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.DEACTIVE_MINER,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<DeactiveMinerResponse> deactiveMiner(@RequestBody DeactiveMinerRequest request){
         try {
-            blockChainCore.getMiner().deactive();
+            getBlockChainCore().getMiner().deactive();
 
             ConfigurationDto configurationDto = new ConfigurationDto(ConfigurationEnum.IS_MINER_ACTIVE.name(),String.valueOf(false));
-            configurationService.setConfiguration(configurationDto);
+            netBlockchainCore.getConfigurationService().setConfiguration(configurationDto);
             DeactiveMinerResponse response = new DeactiveMinerResponse();
 
             response.setDeactiveMinerSuccess(true);
@@ -117,7 +107,7 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.IS_SYNCHRONIZER_ACTIVE,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<IsSynchronizerActiveResponse> isSynchronizerActive(@RequestBody IsSynchronizerActiveRequest request){
         try {
-            boolean isSynchronizerActive = blockChainCore.getSynchronizer().isActive();
+            boolean isSynchronizerActive = getBlockChainCore().getSynchronizer().isActive();
 
             IsSynchronizerActiveResponse response = new IsSynchronizerActiveResponse();
             response.setSynchronizerInActiveState(isSynchronizerActive);
@@ -135,10 +125,10 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.ACTIVE_SYNCHRONIZER,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<ActiveSynchronizerResponse> activeSynchronizer(@RequestBody ActiveSynchronizerRequest request){
         try {
-            blockChainCore.getSynchronizer().active();
+            getBlockChainCore().getSynchronizer().active();
 
             ConfigurationDto configurationDto = new ConfigurationDto(ConfigurationEnum.IS_SYNCHRONIZER_ACTIVE.name(),String.valueOf(true));
-            configurationService.setConfiguration(configurationDto);
+            netBlockchainCore.getConfigurationService().setConfiguration(configurationDto);
             ActiveSynchronizerResponse response = new ActiveSynchronizerResponse();
 
             response.setActiveSynchronizerSuccess(true);
@@ -156,65 +146,16 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.DEACTIVE_SYNCHRONIZER,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<DeactiveSynchronizerResponse> deactiveSynchronizer(@RequestBody DeactiveSynchronizerRequest request){
         try {
-            blockChainCore.getSynchronizer().deactive();
+            getBlockChainCore().getSynchronizer().deactive();
 
             ConfigurationDto configurationDto = new ConfigurationDto(ConfigurationEnum.IS_SYNCHRONIZER_ACTIVE.name(),String.valueOf(false));
-            configurationService.setConfiguration(configurationDto);
+            netBlockchainCore.getConfigurationService().setConfiguration(configurationDto);
             DeactiveSynchronizerResponse response = new DeactiveSynchronizerResponse();
 
             response.setDeactiveSynchronizerSuccess(true);
             return ServiceResult.createSuccessServiceResult("停用同步器成功",response);
         } catch (Exception e){
             String message = "停用同步器失败";
-            logger.error(message,e);
-            return ServiceResult.createFailServiceResult(message);
-        }
-    }
-
-    /**
-     * 查询矿工的地址
-     */
-    @ResponseBody
-    @RequestMapping(value = AdminConsoleApiRoute.QUERY_MINER_ADDRESS,method={RequestMethod.GET,RequestMethod.POST})
-    public ServiceResult<QueryMinerAddressResponse> queryMinerAddress(@RequestBody QueryMinerAddressRequest request){
-        try {
-            ConfigurationDto minerAddressConfigurationDto =  configurationService.getConfigurationByConfigurationKey(ConfigurationEnum.MINER_ADDRESS.name());
-            QueryMinerAddressResponse response = new QueryMinerAddressResponse();
-            response.setMinerAddress(minerAddressConfigurationDto.getConfValue());
-
-            Account defaultMinerAccount = configurationService.getDefaultMinerAccount();
-            response.setDefaultMinerAccount(defaultMinerAccount);
-            return ServiceResult.createSuccessServiceResult("查询矿工的地址成功",response);
-        } catch (Exception e){
-            String message = "查询矿工的地址失败";
-            logger.error(message,e);
-            return ServiceResult.createFailServiceResult(message);
-        }
-    }
-
-    /**
-     * 设置矿工地址
-     */
-    @ResponseBody
-    @RequestMapping(value = AdminConsoleApiRoute.SET_MINER_ADDRESS,method={RequestMethod.GET,RequestMethod.POST})
-    public ServiceResult<SetMinerAddressResponse> setMinerAddress(@RequestBody SetMinerAddressRequest request){
-        try {
-            if(blockChainCore.getMiner().isActive()){
-                return ServiceResult.createFailServiceResult("矿工正在挖矿，请先暂停挖矿，再设置矿工账户地址");
-            }
-            String minerAddress = request.getMinerAddress();
-            if(minerAddress == null || "".equals(minerAddress)){
-                return ServiceResult.createFailServiceResult("请输入矿工地址");
-            }
-            blockChainCore.getMiner().resetMinerAddress(minerAddress);
-            ConfigurationDto configurationDto = new ConfigurationDto();
-            configurationDto.setConfKey(ConfigurationEnum.MINER_ADDRESS.name());
-            configurationDto.setConfValue(minerAddress);
-            configurationService.setConfiguration(configurationDto);
-            SetMinerAddressResponse response = new SetMinerAddressResponse();
-            return ServiceResult.createSuccessServiceResult("成功重置矿工账户地址！",response);
-        } catch (Exception e){
-            String message = "重置矿工的地址失败";
             logger.error(message,e);
             return ServiceResult.createFailServiceResult(message);
         }
@@ -232,10 +173,10 @@ public class AdminConsoleController {
             if(Strings.isNullOrEmpty(node.getIp())){
                 return ServiceResult.createFailServiceResult("节点IP不能为空");
             }
-            if(nodeService.queryNode(node) != null){
+            if(netBlockchainCore.getNodeService().queryNode(node) != null){
                 return ServiceResult.createFailServiceResult("节点已经存在，不需要重复添加");
             }
-            nodeService.addNode(node);
+            netBlockchainCore.getNodeService().addNode(node);
             AddNodeResponse response = new AddNodeResponse();
             response.setAddNodeSuccess(true);
             return ServiceResult.createSuccessServiceResult("新增节点成功",response);
@@ -256,10 +197,10 @@ public class AdminConsoleController {
             if(request.getNode() == null){
                 return ServiceResult.createFailServiceResult("请填写节点信息");
             }
-            if(nodeService.queryNode(request.getNode()) == null){
+            if(netBlockchainCore.getNodeService().queryNode(request.getNode()) == null){
                 return ServiceResult.createFailServiceResult("节点不存在，无法更新");
             }
-            nodeService.updateNode(request.getNode());
+            netBlockchainCore.getNodeService().updateNode(request.getNode());
             UpdateNodeResponse response = new UpdateNodeResponse();
             return ServiceResult.createSuccessServiceResult("更新节点信息成功",response);
         } catch (Exception e){
@@ -276,7 +217,7 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.DELETE_NODE,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<DeleteNodeResponse> deleteNode(@RequestBody DeleteNodeRequest request){
         try {
-            nodeService.deleteNode(request.getNode());
+            netBlockchainCore.getNodeService().deleteNode(request.getNode());
             DeleteNodeResponse response = new DeleteNodeResponse();
             return ServiceResult.createSuccessServiceResult("删除节点成功",response);
         } catch (Exception e){
@@ -293,7 +234,7 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.QUERY_ALL_NODE_LIST,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<QueryAllNodeListResponse> queryAllNodeList(@RequestBody QueryAllNodeListRequest request){
         try {
-            List<NodeDto> nodeList = nodeService.queryAllNodeList();
+            List<NodeDto> nodeList = netBlockchainCore.getNodeService().queryAllNodeList();
             QueryAllNodeListResponse response = new QueryAllNodeListResponse();
             response.setNodeList(nodeList);
             return ServiceResult.createSuccessServiceResult("查询节点成功",response);
@@ -311,7 +252,7 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.IS_AUTO_SEARCH_NODE,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<IsAutoSearchNodeResponse> isAutoSearchNewNode(@RequestBody IsAutoSearchNodeRequest request){
         try {
-            ConfigurationDto configurationDto = configurationService.getConfigurationByConfigurationKey(ConfigurationEnum.AUTO_SEARCH_NODE.name());
+            ConfigurationDto configurationDto = netBlockchainCore.getConfigurationService().getConfigurationByConfigurationKey(ConfigurationEnum.AUTO_SEARCH_NODE.name());
             IsAutoSearchNodeResponse response = new IsAutoSearchNodeResponse();
             response.setAutoSearchNewNode(Boolean.valueOf(configurationDto.getConfValue()));
             return ServiceResult.createSuccessServiceResult("查询是否允许自动搜索区块链节点成功",response);
@@ -332,7 +273,7 @@ public class AdminConsoleController {
             ConfigurationDto configurationDto = new ConfigurationDto();
             configurationDto.setConfKey(ConfigurationEnum.AUTO_SEARCH_NODE.name());
             configurationDto.setConfValue(String.valueOf(request.isAutoSearchNode()));
-            configurationService.setConfiguration(configurationDto);
+            netBlockchainCore.getConfigurationService().setConfiguration(configurationDto);
 
             SetAutoSearchNodeResponse response = new SetAutoSearchNodeResponse();
             return ServiceResult.createSuccessServiceResult("设置是否允许自动搜索区块链节点成功",response);
@@ -353,7 +294,7 @@ public class AdminConsoleController {
             if(request.getBlockHeight() == null){
                 return ServiceResult.createFailServiceResult("删除区块失败，区块高度不能空。");
             }
-            blockChainCoreService.removeBlocksUtilBlockHeightLessThan(request.getBlockHeight());
+            getBlockChainCore().removeBlocksUtilBlockHeightLessThan(request.getBlockHeight());
             RemoveBlockResponse response = new RemoveBlockResponse();
             return ServiceResult.createSuccessServiceResult("删除区块成功",response);
         } catch (Exception e){
@@ -361,5 +302,95 @@ public class AdminConsoleController {
             logger.error(message,e);
             return ServiceResult.createFailServiceResult(message);
         }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = AdminConsoleApiRoute.ADD_ACCOUNT,method={RequestMethod.GET,RequestMethod.POST})
+    public ServiceResult<AddAccountResponse> addAccount(@RequestBody AddAccountRequest request){
+        try {
+            Account account = request.getAccount();
+            if(account == null){
+                return ServiceResult.createFailServiceResult("账户不能为空。");
+            }
+            String privateKey = account.getPrivateKey();
+            if(Strings.isNullOrEmpty(privateKey)){
+                return ServiceResult.createFailServiceResult("账户私钥不能为空。");
+            }
+            String publicKey = account.getPublicKey();
+            if(!Strings.isNullOrEmpty(publicKey)){
+                return ServiceResult.createFailServiceResult("账户公钥由私钥计算得出，不需要填写。");
+            }
+            String address = account.getAddress();
+            if(!Strings.isNullOrEmpty(address)){
+                return ServiceResult.createFailServiceResult("账户地址由私钥计算得出，不需要填写。");
+            }
+
+            Account accountTemp = AccountUtil.accountFromPrivateKey(privateKey);
+            getBlockChainCore().getWallet().addAccount(accountTemp);
+            AddAccountResponse response = new AddAccountResponse();
+            response.setAddAccountSuccess(true);
+            return ServiceResult.createSuccessServiceResult("删除区块成功",response);
+        } catch (Exception e){
+            String message = "新增账户失败";
+            logger.error(message,e);
+            return ServiceResult.createFailServiceResult(message);
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = AdminConsoleApiRoute.DELETE_ACCOUNT,method={RequestMethod.GET,RequestMethod.POST})
+    public ServiceResult<DeleteAccountResponse> deleteAccount(@RequestBody DeleteAccountRequest request){
+        try {
+            DeleteAccountResponse response = new DeleteAccountResponse();
+            response.setDeleteAccountSuccess(true);
+            ServiceResult<DeleteAccountResponse> responseServiceResult = ServiceResult.createSuccessServiceResult("删除账号成功",response);
+
+            Account account = request.getAccount();
+            if(account == null){
+                return ServiceResult.createFailServiceResult("账户不能为空。");
+            }
+            String address = account.getAddress();
+            if(!Strings.isNullOrEmpty(address)){
+                Account accountTemp = new Account(null,null,address);
+                getBlockChainCore().getWallet().deleteAccount(accountTemp);
+                return responseServiceResult;
+            }
+            String publicKey = account.getPublicKey();
+            if(!Strings.isNullOrEmpty(publicKey)){
+                Account accountTemp = new Account(null,null, AccountUtil.addressFromPublicKey(publicKey));
+                getBlockChainCore().getWallet().deleteAccount(accountTemp);
+                return responseServiceResult;
+            }
+            String privateKey = account.getPrivateKey();
+            if(!Strings.isNullOrEmpty(privateKey)){
+                Account accountTemp = new Account(null,null, AccountUtil.accountFromPrivateKey(privateKey).getAddress());
+                getBlockChainCore().getWallet().deleteAccount(accountTemp);
+                return responseServiceResult;
+            }
+            return ServiceResult.createFailServiceResult("请填写需要删除的地址");
+        } catch (Exception e){
+            String message = "删除账号失败";
+            logger.error(message,e);
+            return ServiceResult.createFailServiceResult(message);
+        }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = AdminConsoleApiRoute.QUERY_ALL_ACCOUNTLIST,method={RequestMethod.GET,RequestMethod.POST})
+    public ServiceResult<QueryAllAccountListResponse> queryAllAccountList(@RequestBody QueryAllAccountListRequest request){
+        try {
+            List<Account> allAccount = getBlockChainCore().getWallet().queryAllAccount();
+            QueryAllAccountListResponse response = new QueryAllAccountListResponse();
+            response.setAccountList(allAccount);
+            return ServiceResult.createSuccessServiceResult("删除区块成功",response);
+        } catch (Exception e){
+            String message = "删除区块失败";
+            logger.error(message,e);
+            return ServiceResult.createFailServiceResult(message);
+        }
+    }
+
+    private BlockChainCore getBlockChainCore(){
+        return netBlockchainCore.getBlockChainCore();
     }
 }

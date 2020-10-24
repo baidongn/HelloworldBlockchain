@@ -1,9 +1,7 @@
 package com.xingkaichun.helloworldblockchain.netcore.service;
 
 import com.google.common.base.Strings;
-import com.google.gson.Gson;
-import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
-import com.xingkaichun.helloworldblockchain.crypto.model.Account;
+import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.netcore.dao.ConfigurationDao;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationDto;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationEnum;
@@ -36,7 +34,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
         //默认值
         for (ConfigurationEnum configurationEnum:ConfigurationEnum.values()){
-            if(configurationEnum.name().equals(confKey)){
+            if(StringUtil.isEquals(configurationEnum.name(),confKey)){
                 configurationDto.setConfValue(configurationEnum.getDefaultConfValue());
                 return configurationDto;
             }
@@ -58,7 +56,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         //检查是否存在配置
         boolean exist = false;
         for (ConfigurationEnum configurationEnum: ConfigurationEnum.values()){
-            if(configurationEnum.name().equals(confKey)){
+            if(StringUtil.isEquals(configurationEnum.name(),confKey)){
                 exist = true;
             }
         }
@@ -78,37 +76,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         }else {
             configurationDao.updateConfiguration(configurationEntity);
         }
-    }
-
-
-    @Override
-    public Account getDefaultMinerAccount() {
-        synchronized (ConfigurationServiceImpl.class){
-            Gson gson = new Gson();
-            ConfigurationDto configurationDto = getConfigurationByConfigurationKey(ConfigurationEnum.DEFAULT_MINER_ACCOUNT.name());
-            if(configurationDto != null && !Strings.isNullOrEmpty(configurationDto.getConfValue())){
-                Account account = gson.fromJson(configurationDto.getConfValue(),Account.class);
-                return account;
-            }
-            Account defaultAccount = AccountUtil.randomAccount();
-            ConfigurationDto defaultAccountConfigurationDto =
-                    new ConfigurationDto(ConfigurationEnum.DEFAULT_MINER_ACCOUNT.name(),gson.toJson(defaultAccount));
-            setConfiguration(defaultAccountConfigurationDto);
-            return defaultAccount;
-        }
-    }
-
-    @Override
-    public String getMinerAddress() {
-        String minerAddress;
-        ConfigurationDto minerAddressConfigurationDto = getConfigurationByConfigurationKey(ConfigurationEnum.MINER_ADDRESS.name());
-        if(minerAddressConfigurationDto != null && !Strings.isNullOrEmpty(minerAddressConfigurationDto.getConfValue())){
-            minerAddress = minerAddressConfigurationDto.getConfValue();
-        }else {
-            Account account = getDefaultMinerAccount();
-            minerAddress = account.getAddress();
-        }
-        return minerAddress;
     }
 
     @Override

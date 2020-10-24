@@ -12,7 +12,7 @@ import java.io.Serializable;
 public class TransactionInput implements Serializable {
 
     //交易的输入是一笔交易的输出
-    private TransactionOutput unspendTransactionOutput;
+    private UnspendTransactionOutput unspendTransactionOutput;
     /**
      * 脚本钥匙
      * 脚本钥匙用于解锁交易输出的脚本锁。解锁成功，则证明了(持有脚本钥匙的)用户拥有(脚本锁所在的)交易输出的所有权，
@@ -30,11 +30,12 @@ public class TransactionInput implements Serializable {
 
     //region get set
 
-    public TransactionOutput getUnspendTransactionOutput() {
+
+    public UnspendTransactionOutput getUnspendTransactionOutput() {
         return unspendTransactionOutput;
     }
 
-    public void setUnspendTransactionOutput(TransactionOutput unspendTransactionOutput) {
+    public void setUnspendTransactionOutput(UnspendTransactionOutput unspendTransactionOutput) {
         this.unspendTransactionOutput = unspendTransactionOutput;
     }
 

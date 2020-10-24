@@ -1,11 +1,11 @@
 package com.xingkaichun.helloworldblockchain.netcore;
 
+import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.ThreadUtil;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationDto;
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationEnum;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.NodeDto;
-import com.xingkaichun.helloworldblockchain.netcore.service.BlockChainCoreService;
 import com.xingkaichun.helloworldblockchain.netcore.service.BlockchainNodeClientService;
 import com.xingkaichun.helloworldblockchain.netcore.service.ConfigurationService;
 import com.xingkaichun.helloworldblockchain.netcore.service.NodeService;
@@ -32,15 +32,15 @@ public class BlockBroadcaster {
 
     private ConfigurationService configurationService;
     private NodeService nodeService;
-    private BlockChainCoreService blockChainCoreService;
+    private BlockChainCore blockChainCore;
     private BlockchainNodeClientService blockchainNodeClientService;
 
     public BlockBroadcaster(ConfigurationService configurationService, NodeService nodeService
-            , BlockChainCoreService blockChainCoreService, BlockchainNodeClientService blockchainNodeClientService) {
+            , BlockChainCore blockChainCore, BlockchainNodeClientService blockchainNodeClientService) {
 
         this.configurationService = configurationService;
         this.nodeService = nodeService;
-        this.blockChainCoreService = blockChainCoreService;
+        this.blockChainCore = blockChainCore;
         this.blockchainNodeClientService = blockchainNodeClientService;
     }
 
@@ -68,7 +68,7 @@ public class BlockBroadcaster {
             return;
         }
 
-        long blockChainHeight = blockChainCoreService.queryBlockChainHeight();
+        long blockChainHeight = blockChainCore.queryBlockChainHeight();
         //自己的高度在全网是最高的吗？是的话，传播自己的高度给其它节点，好让其它节点知道可以来同步自己的区块。
         boolean isHighest = true;
         for(NodeDto node:nodes){

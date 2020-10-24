@@ -4,6 +4,7 @@ import com.xingkaichun.helloworldblockchain.core.BlockChainDataBase;
 import com.xingkaichun.helloworldblockchain.core.Consensus;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.tools.BlockTool;
+import com.xingkaichun.helloworldblockchain.core.utils.StringUtil;
 import com.xingkaichun.helloworldblockchain.setting.GlobalSetting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ public class ProofOfWorkConsensusImpl extends Consensus {
     @Override
     public boolean isReachConsensus(BlockChainDataBase blockChainDataBase,Block block) {
         String bits = block.getBits();
-        if(bits == null || bits.isEmpty()){
+        if(StringUtil.isEmpty(bits)){
             bits = calculateDifficult(blockChainDataBase,block);
             block.setBits(bits);
         }

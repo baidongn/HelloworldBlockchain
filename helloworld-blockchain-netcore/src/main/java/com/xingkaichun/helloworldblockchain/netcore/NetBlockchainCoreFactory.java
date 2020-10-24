@@ -19,17 +19,20 @@ import com.xingkaichun.helloworldblockchain.netcore.service.*;
  */
 public class NetBlockchainCoreFactory {
 
-    private NetBlockchainCore netBlockchainCore;
-    private ConfigurationService configurationService;
-    private BlockChainCoreService blockChainCoreService;
-    private NodeService nodeService;
-    private BlockChainCore blockChainCore;
-
-    public NetBlockchainCoreFactory(){
-        this(ResourcePathTool.getDataRootPath(),8444);
+    /**
+     * 创建NetBlockchainCore实例
+     */
+    public static NetBlockchainCore createNetBlockchainCore(){
+        return createNetBlockchainCore(ResourcePathTool.getDataRootPath(),8444);
     }
 
-    public NetBlockchainCoreFactory(String dataRootPath, int serverPort){
+    /**
+     * 创建NetBlockchainCore实例
+     *
+     * @param dataRootPath 区块链数据存放位置
+     * @param serverPort 区块链节点网络端口
+     */
+    public static NetBlockchainCore createNetBlockchainCore(String dataRootPath, int serverPort){
         if(dataRootPath == null){
             throw new NullPointerException("参数路径不能为空。");
         }
@@ -37,47 +40,27 @@ public class NetBlockchainCoreFactory {
 
 
         ConfigurationDao configurationDao = new ConfigurationDaoImpl(dataRootPath);
-        configurationService = new ConfigurationServiceImpl(configurationDao);
+        ConfigurationService configurationService = new ConfigurationServiceImpl(configurationDao);
 
-        String minerAddress = configurationService.getMinerAddress();
-        blockChainCore = BlockChainCoreFactory.createBlockChainCore(dataRootPath,minerAddress);
+        BlockChainCore blockChainCore = BlockChainCoreFactory.createBlockChainCore(dataRootPath);
 
         NodeDao nodeDao = new NodeDaoImpl(dataRootPath);
 
-        nodeService = new NodeServiceImpl(nodeDao,configurationService);
+        NodeService nodeService = new NodeServiceImpl(nodeDao,configurationService);
         BlockchainNodeClientService blockchainNodeClientService = new BlockchainNodeClientServiceImpl(serverPort);
-        blockChainCoreService = new BlockChainCoreServiceImpl(blockChainCore,nodeService,blockchainNodeClientService);
 
         SynchronizeRemoteNodeBlockService synchronizeRemoteNodeBlockService = new SynchronizeRemoteNodeBlockServiceImpl(blockChainCore,nodeService,blockchainNodeClientService,configurationService);
 
-        HttpServerHandlerResolver httpServerHandlerResolver = new HttpServerHandlerResolver(blockChainCoreService,nodeService,configurationService);
+        HttpServerHandlerResolver httpServerHandlerResolver = new HttpServerHandlerResolver(blockChainCore,nodeService,configurationService);
         BlockchainHttpServer blockchainHttpServer = new BlockchainHttpServer(serverPort, httpServerHandlerResolver);
         NodeSearcher nodeSearcher = new NodeSearcher(configurationService,nodeService,blockchainNodeClientService);
         NodeBroadcaster nodeBroadcaster = new NodeBroadcaster(configurationService,nodeService,blockchainNodeClientService);
-        BlockSearcher blockSearcher = new BlockSearcher(nodeService,blockChainCoreService,synchronizeRemoteNodeBlockService,blockChainCore,configurationService,blockchainNodeClientService);
-        BlockBroadcaster blockBroadcaster = new BlockBroadcaster(configurationService,nodeService,blockChainCoreService,blockchainNodeClientService);
-
-
-        netBlockchainCore
+        BlockSearcher blockSearcher = new BlockSearcher(nodeService,synchronizeRemoteNodeBlockService,blockChainCore,configurationService,blockchainNodeClientService);
+        BlockBroadcaster blockBroadcaster = new BlockBroadcaster(configurationService,nodeService,blockChainCore,blockchainNodeClientService);
+        NetBlockchainCore netBlockchainCore
                 = new NetBlockchainCore(blockChainCore, blockchainHttpServer, configurationService
-                ,nodeSearcher,nodeBroadcaster,blockSearcher, blockBroadcaster);
-    }
-
-
-    public NetBlockchainCore getNetBlockchainCore() {
+                ,nodeSearcher,nodeBroadcaster,blockSearcher, blockBroadcaster
+                ,nodeService,blockchainNodeClientService);
         return netBlockchainCore;
-    }
-
-    public ConfigurationService getConfigurationService() {
-        return configurationService;
-    }
-    public BlockChainCoreService getBlockChainCoreService() {
-        return blockChainCoreService;
-    }
-    public NodeService getNodeService() {
-        return nodeService;
-    }
-    public BlockChainCore getBlockChainCore() {
-        return blockChainCore;
     }
 }

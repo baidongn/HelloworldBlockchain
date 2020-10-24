@@ -3,6 +3,7 @@ package com.xingkaichun.helloworldblockchain.core;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
+import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutputId;
 
 import java.util.List;
 
@@ -114,11 +115,11 @@ public abstract class BlockChainDataBase {
     /**
      * 在区块链中根据 交易输出哈希 查找交易输出
      */
-    public abstract TransactionOutput queryTransactionOutputByTransactionOutputHash(String transactionOutputHash) ;
+    public abstract TransactionOutput queryTransactionOutputByTransactionOutputId(TransactionOutputId transactionOutputId) ;
     /**
      * 在区块链中根据 交易输出哈希 查找未花费交易输出
      */
-    public abstract TransactionOutput queryUnspendTransactionOutputByTransactionOutputHash(String unspendTransactionOutputHash) ;
+    public abstract TransactionOutput queryUnspendTransactionOutputByTransactionOutputId(TransactionOutputId transactionOutputId) ;
     /**
      * 根据地址查询交易输出。from从0开始。
      */

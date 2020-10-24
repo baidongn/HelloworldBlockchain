@@ -1,6 +1,7 @@
 package com.xingkaichun.helloworldblockchain.core.tools;
 
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
+import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutputId;
 import com.xingkaichun.helloworldblockchain.core.utils.LevelDBUtil;
 
 /**
@@ -27,8 +28,8 @@ public class BlockChainDataBaseKeyTool {
     private static final String TRANSACTION_HASH_TO_TRANSACTION_PREFIX_FLAG = "H";
     //交易输出标识：存储交易输出哈希到交易输出的映射
     private static final String TRANSACTION_OUTPUT_HASH_TO_TRANSACTION_OUTPUT_PREFIX_FLAG = "I";
-    //未花费的交易输出标识：存储未花费交易输出哈希到未花费交易输出的映射
-    private static final String UNSPEND_TRANSACTION_OUTPUT_HASH_TO_UNSPEND_TRANSACTION_OUTPUT_PREFIX_FLAG = "J";
+    //未花费的交易输出标识：存储未花费交易输出ID到未花费交易输出的映射
+    private static final String UNSPEND_TRANSACTION_OUTPUT_ID_TO_UNSPEND_TRANSACTION_OUTPUT_PREFIX_FLAG = "J";
     //地址标识：存储地址到交易输出的映射
     private static final String ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG = "K";
     //地址标识：存储地址到未花费交易输出的映射
@@ -62,32 +63,32 @@ public class BlockChainDataBaseKeyTool {
         String stringKey = TRANSACTION_HASH_TO_TRANSACTION_PREFIX_FLAG + transactionHash + END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
-    public static byte[] buildTransactionOutputHashToTransactionOutputKey(String transactionOutputHash) {
-        String stringKey = TRANSACTION_OUTPUT_HASH_TO_TRANSACTION_OUTPUT_PREFIX_FLAG + transactionOutputHash + END_FLAG;
+    public static byte[] buildTransactionOutputIdToTransactionOutputKey(TransactionOutputId transactionOutputId) {
+        String stringKey = TRANSACTION_OUTPUT_HASH_TO_TRANSACTION_OUTPUT_PREFIX_FLAG + transactionOutputId.getTransactionOutputId() + END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
-    public static byte[] buildUnspendTransactionOutputHashToUnspendTransactionOutputKey(String transactionOutputHash) {
-        String stringKey = UNSPEND_TRANSACTION_OUTPUT_HASH_TO_UNSPEND_TRANSACTION_OUTPUT_PREFIX_FLAG + transactionOutputHash + END_FLAG;
+    public static byte[] buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(TransactionOutputId transactionOutputId) {
+        String stringKey = UNSPEND_TRANSACTION_OUTPUT_ID_TO_UNSPEND_TRANSACTION_OUTPUT_PREFIX_FLAG + transactionOutputId.getTransactionOutputId() + END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
-    public static byte[] buildAddressToTransactionOuputListKey(TransactionOutput transactionOutput) {
+    public static byte[] buildAddressToTransactionOutputListKey(TransactionOutput transactionOutput) {
         String address = transactionOutput.getAddress();
-        String transactionOutputHash = transactionOutput.getTransactionOutputHash();
-        String stringKey = ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG + transactionOutputHash + END_FLAG;
+        String transactionOutputId = transactionOutput.getTransactionOutputId();
+        String stringKey = ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG + transactionOutputId + END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
-    public static byte[] buildAddressToTransactionOuputListKey(String address) {
-        String stringKey = ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG + END_FLAG;
+    public static byte[] buildAddressToTransactionOutputListKey(String address) {
+        String stringKey = ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
     public static byte[] buildAddressToUnspendTransactionOutputListKey(TransactionOutput transactionOutput) {
         String address = transactionOutput.getAddress();
-        String transactionOutputHash = transactionOutput.getTransactionOutputHash();
-        String stringKey = ADDRESS_TO_UNSPEND_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG + transactionOutputHash + END_FLAG;
+        String transactionOutputId = transactionOutput.getTransactionOutputId();
+        String stringKey = ADDRESS_TO_UNSPEND_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG + transactionOutputId + END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
     public static byte[] buildAddressToUnspendTransactionOutputListKey(String address) {
-        String stringKey = ADDRESS_TO_UNSPEND_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + END_FLAG;
+        String stringKey = ADDRESS_TO_UNSPEND_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG + address + ADDRESS_END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
     public static byte[] buildTotalTransactionQuantityKey() {

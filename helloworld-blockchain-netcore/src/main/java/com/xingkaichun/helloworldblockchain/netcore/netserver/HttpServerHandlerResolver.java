@@ -1,10 +1,12 @@
 package com.xingkaichun.helloworldblockchain.netcore.netserver;
 
+import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
+import com.xingkaichun.helloworldblockchain.core.model.Block;
+import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
 import com.xingkaichun.helloworldblockchain.netcore.dto.common.ServiceResult;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.NodeDto;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.request.*;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.response.*;
-import com.xingkaichun.helloworldblockchain.netcore.service.BlockChainCoreService;
 import com.xingkaichun.helloworldblockchain.netcore.service.ConfigurationService;
 import com.xingkaichun.helloworldblockchain.netcore.service.NodeService;
 import com.xingkaichun.helloworldblockchain.netcore.transport.dto.BlockDTO;
@@ -25,12 +27,12 @@ public class HttpServerHandlerResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpServerHandlerResolver.class);
 
-    private BlockChainCoreService blockChainCoreService;
+    private BlockChainCore blockChainCore;
     private NodeService nodeService;
     private ConfigurationService configurationService;
 
-    public HttpServerHandlerResolver(BlockChainCoreService blockChainCoreService, NodeService nodeService, ConfigurationService configurationService) {
-        this.blockChainCoreService = blockChainCoreService;
+    public HttpServerHandlerResolver(BlockChainCore blockChainCore, NodeService nodeService, ConfigurationService configurationService) {
+        this.blockChainCore = blockChainCore;
         this.nodeService = nodeService;
         this.configurationService = configurationService;
     }
@@ -41,7 +43,7 @@ public class HttpServerHandlerResolver {
     public ServiceResult<PingResponse> ping(ChannelHandlerContext ctx, PingRequest request){
         try {
             List<NodeDto> nodeList = nodeService.queryAllNoForkNodeList();
-            long blockChainHeight = blockChainCoreService.queryBlockChainHeight();
+            long blockChainHeight = blockChainCore.queryBlockChainHeight();
 
             //将ping的来路作为区块链节点
             NodeDto node = new NodeDto();
@@ -110,7 +112,7 @@ public class HttpServerHandlerResolver {
      */
     public ServiceResult<QueryBlockHashByBlockHeightResponse> queryBlockHashByBlockHeight(QueryBlockHashByBlockHeightRequest request){
         try {
-            String blockHash = blockChainCoreService.queryBlockHashByBlockHeight(request.getBlockHeight());
+            String blockHash = blockChainCore.queryBlockHashByBlockHeight(request.getBlockHeight());
 
             QueryBlockHashByBlockHeightResponse response = new QueryBlockHashByBlockHeightResponse();
             response.setBlockHash(blockHash);
@@ -128,7 +130,8 @@ public class HttpServerHandlerResolver {
      */
     public ServiceResult<QueryBlockDtoByBlockHeightResponse> queryBlockDtoByBlockHeight(QueryBlockDtoByBlockHeightRequest request){
         try {
-            BlockDTO blockDTO = blockChainCoreService.queryBlockDtoByBlockHeight(request.getBlockHeight());
+            Block block = blockChainCore.queryBlockByBlockHeight(request.getBlockHeight());
+            BlockDTO blockDTO = NodeTransportDtoTool.classCast(block);
 
             QueryBlockDtoByBlockHeightResponse response = new QueryBlockDtoByBlockHeightResponse();
             response.setBlockDTO(blockDTO);
@@ -145,7 +148,7 @@ public class HttpServerHandlerResolver {
      */
     public ServiceResult<ReceiveTransactionResponse> receiveTransaction(ReceiveTransactionRequest request){
         try {
-            blockChainCoreService.saveTransactionToMinerTransactionDatabase(request.getTransactionDTO());
+            blockChainCore.submitTransaction(request.getTransactionDTO());
 
             ReceiveTransactionResponse response = new ReceiveTransactionResponse();
             return ServiceResult.createSuccessServiceResult("commit transaction success",response);

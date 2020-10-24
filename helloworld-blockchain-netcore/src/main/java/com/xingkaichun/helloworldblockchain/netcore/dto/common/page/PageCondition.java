@@ -13,14 +13,6 @@ public class PageCondition {
     public PageCondition() {
     }
 
-    public PageCondition(Long from, Long size) {
-        this.from = from;
-        this.size = size;
-    }
-
-    public static final PageCondition DEFAULT_PAGE_CONDITION = new PageCondition(1L,10L);
-
-
 
 
     //region get set

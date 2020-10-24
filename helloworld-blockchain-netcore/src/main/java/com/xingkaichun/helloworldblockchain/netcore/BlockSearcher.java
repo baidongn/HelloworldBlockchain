@@ -8,7 +8,10 @@ import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.Configurat
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationEnum;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.NodeDto;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.response.PingResponse;
-import com.xingkaichun.helloworldblockchain.netcore.service.*;
+import com.xingkaichun.helloworldblockchain.netcore.service.BlockchainNodeClientService;
+import com.xingkaichun.helloworldblockchain.netcore.service.ConfigurationService;
+import com.xingkaichun.helloworldblockchain.netcore.service.NodeService;
+import com.xingkaichun.helloworldblockchain.netcore.service.SynchronizeRemoteNodeBlockService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,19 +29,16 @@ public class BlockSearcher {
     private static final Logger logger = LoggerFactory.getLogger(BlockSearcher.class);
 
     private NodeService nodeService;
-    private BlockChainCoreService blockChainCoreService;
     private SynchronizeRemoteNodeBlockService synchronizeRemoteNodeBlockService;
     private BlockChainCore blockChainCore;
     private ConfigurationService configurationService;
     private BlockchainNodeClientService blockchainNodeClientService;
 
 
-    public BlockSearcher(NodeService nodeService, BlockChainCoreService blockChainCoreService
+    public BlockSearcher(NodeService nodeService
             , SynchronizeRemoteNodeBlockService synchronizeRemoteNodeBlockService, BlockChainCore blockChainCore
             , ConfigurationService configurationService,BlockchainNodeClientService blockchainNodeClientService) {
-
         this.nodeService = nodeService;
-        this.blockChainCoreService = blockChainCoreService;
         this.synchronizeRemoteNodeBlockService = synchronizeRemoteNodeBlockService;
         this.blockChainCore = blockChainCore;
         this.configurationService = configurationService;
@@ -88,13 +88,13 @@ public class BlockSearcher {
             return;
         }
 
-        long localBlockChainHeight = blockChainCoreService.queryBlockChainHeight();
+        long localBlockChainHeight = blockChainCore.queryBlockChainHeight();
         //可能存在多个节点的数据都比本地节点的区块多，但它们节点的数据可能是相同的，不应该向每个节点都去请求数据。
         for(NodeDto node:nodes){
             if(LongUtil.isLessThan(localBlockChainHeight,node.getBlockChainHeight())){
                 synchronizeRemoteNodeBlockService.synchronizeRemoteNodeBlock(node);
                 //同步之后，本地区块链高度已经发生改变了
-                localBlockChainHeight = blockChainCoreService.queryBlockChainHeight();
+                localBlockChainHeight = blockChainCore.queryBlockChainHeight();
             }
         }
     }
