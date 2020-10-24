@@ -26,7 +26,7 @@ public class NodeTransportDtoTool {
      * 类型转换
      * TODO 先填充不需要依赖blockchain的属性，然后填充依赖blockchain的属性
      */
-    public static Block classCast(BlockChainDataBase blockChainDataBase, BlockDTO blockDTO) {
+    public static Block blockDto2Block(BlockChainDataBase blockChainDataBase, BlockDTO blockDTO) {
         //求上一个区块的hash
         String previousBlockHash = blockDTO.getPreviousBlockHash();
         Block previousBlock = blockChainDataBase.queryBlockByBlockHash(previousBlockHash);
@@ -43,7 +43,7 @@ public class NodeTransportDtoTool {
         }
 
         long blockHeight = previousBlock==null?GlobalSetting.GenesisBlock.HEIGHT+1:previousBlock.getHeight()+1;
-        List<Transaction> transactionList = obtainTransactionList(blockChainDataBase,blockDTO);
+        List<Transaction> transactionList = transactionDto2Transaction(blockChainDataBase,blockDTO.getTransactionDtoList());
         String merkleTreeRoot = BlockTool.calculateBlockMerkleTreeRoot(block);
 
         block.setHeight(blockHeight);
@@ -52,12 +52,11 @@ public class NodeTransportDtoTool {
         return block;
     }
 
-    private static List<Transaction> obtainTransactionList(BlockChainDataBase blockChainDataBase, BlockDTO blockDTO) {
+    private static List<Transaction> transactionDto2Transaction(BlockChainDataBase blockChainDataBase, List<TransactionDTO> transactionDtoList) {
         List<Transaction> transactionList = new ArrayList<>();
-        List<TransactionDTO> transactionDtoList = blockDTO.getTransactionDtoList();
         if(transactionDtoList != null){
             for(TransactionDTO transactionDTO:transactionDtoList){
-                Transaction transaction = classCast(blockChainDataBase,transactionDTO);
+                Transaction transaction = transactionDto2Transaction(blockChainDataBase,transactionDTO);
                 transactionList.add(transaction);
             }
         }
@@ -67,7 +66,7 @@ public class NodeTransportDtoTool {
     /**
      * 类型转换
      */
-    public static BlockDTO classCast(Block block) {
+    public static BlockDTO block2BlockDTO(Block block) {
         if(block == null){
             return null;
         }
@@ -75,7 +74,7 @@ public class NodeTransportDtoTool {
         List<Transaction> transactionList = block.getTransactions();
         if(transactionList != null){
             for(Transaction transaction:transactionList){
-                TransactionDTO transactionDTO = classCast(transaction);
+                TransactionDTO transactionDTO = transaction2TransactionDTO(transaction);
                 transactionDtoList.add(transactionDTO);
             }
         }
@@ -90,7 +89,7 @@ public class NodeTransportDtoTool {
     /**
      * 类型转换
      */
-    public static Transaction classCast(BlockChainDataBase blockChainDataBase, TransactionDTO transactionDTO) {
+    public static Transaction transactionDto2Transaction(BlockChainDataBase blockChainDataBase, TransactionDTO transactionDTO) {
         List<TransactionInput> inputs = new ArrayList<>();
         List<TransactionInputDTO> transactionInputDtoList = transactionDTO.getTransactionInputDtoList();
         if(transactionInputDtoList != null){
@@ -114,13 +113,13 @@ public class NodeTransportDtoTool {
         List<TransactionOutputDTO> dtoOutputs = transactionDTO.getTransactionOutputDtoList();
         if(dtoOutputs != null){
             for(TransactionOutputDTO transactionOutputDTO:dtoOutputs){
-                TransactionOutput transactionOutput = classCast(transactionOutputDTO);
+                TransactionOutput transactionOutput = transactionOutputDto2TransactionOutput(transactionOutputDTO);
                 outputs.add(transactionOutput);
             }
         }
 
         Transaction transaction = new Transaction();
-        TransactionType transactionType = transactionTypeFromTransactionDTO(transactionDTO);
+        TransactionType transactionType = obtainTransactionDTO(transactionDTO);
         transaction.setTransactionType(transactionType);
         transaction.setTransactionHash(TransactionTool.calculateTransactionHash(transactionDTO));
         transaction.setInputs(inputs);
@@ -128,7 +127,7 @@ public class NodeTransportDtoTool {
         return transaction;
     }
 
-    private static TransactionType transactionTypeFromTransactionDTO(TransactionDTO transactionDTO) {
+    private static TransactionType obtainTransactionDTO(TransactionDTO transactionDTO) {
         if(transactionDTO.getTransactionInputDtoList() == null || transactionDTO.getTransactionInputDtoList().size()==0){
             return TransactionType.COINBASE;
         }
@@ -155,7 +154,7 @@ public class NodeTransportDtoTool {
     /**
      * 类型转换
      */
-    public static TransactionDTO classCast(Transaction transaction) {
+    public static TransactionDTO transaction2TransactionDTO(Transaction transaction) {
         List<TransactionInputDTO> inputs = new ArrayList<>();
         List<TransactionInput> transactionInputList = transaction.getInputs();
         if(transactionInputList!=null){
@@ -199,7 +198,7 @@ public class NodeTransportDtoTool {
     /**
      * 类型转换
      */
-    public static TransactionOutput classCast(TransactionOutputDTO transactionOutputDTO) {
+    public static TransactionOutput transactionOutputDto2TransactionOutput(TransactionOutputDTO transactionOutputDTO) {
         TransactionOutput transactionOutput = new TransactionOutput();
         String publicKeyHash = StackBasedVirtualMachine.getPublicKeyHashByPayToPublicKeyHashOutputScript(transactionOutputDTO.getScriptLockDTO());
         String address = AccountUtil.addressFromPublicKeyHash(publicKeyHash);

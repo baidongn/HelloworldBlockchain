@@ -106,7 +106,7 @@ public class MinerDefaultImpl extends Miner {
         if(forMineBlockTransactionDtoList != null){
             for(TransactionDTO transactionDTO:forMineBlockTransactionDtoList){
                 try {
-                    Transaction transaction = NodeTransportDtoTool.classCast(blockChainDataBase,transactionDTO);
+                    Transaction transaction = NodeTransportDtoTool.transactionDto2Transaction(blockChainDataBase,transactionDTO);
                     forMineBlockTransactionList.add(transaction);
                 } catch (Exception e) {
                     String transactionHash = TransactionTool.calculateTransactionHash(transactionDTO);

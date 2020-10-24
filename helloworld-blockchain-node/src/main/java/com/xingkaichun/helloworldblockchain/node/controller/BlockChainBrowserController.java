@@ -109,7 +109,7 @@ public class BlockChainBrowserController {
             if(transaction == null){
                 return ServiceResult.createFailServiceResult(String.format("区块链中不存在交易哈希[%s]，请检查输入的交易哈希。",request.getTransactionHash()));
             }
-            TransactionDTO transactionDTO = NodeTransportDtoTool.classCast(transaction);
+            TransactionDTO transactionDTO = NodeTransportDtoTool.transaction2TransactionDTO(transaction);
             QueryTransactionByTransactionHashResponse response = new QueryTransactionByTransactionHashResponse();
             response.setTransactionDTO(transactionDTO);
             return ServiceResult.createSuccessServiceResult("根据交易哈希查询交易成功",response);

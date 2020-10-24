@@ -101,7 +101,7 @@ public class SynchronizerDefaultImpl extends Synchronizer {
         if(blockDTO != null){
             temporaryBlockChainDataBase.removeBlocksUtilBlockHeightLessThan(minBlockHeight);
             while(blockDTO != null){
-                Block block = NodeTransportDtoTool.classCast(temporaryBlockChainDataBase,blockDTO);
+                Block block = NodeTransportDtoTool.blockDto2Block(temporaryBlockChainDataBase,blockDTO);
                 boolean isAddBlockToBlockChainSuccess = temporaryBlockChainDataBase.addBlock(block);
                 if(!isAddBlockToBlockChainSuccess){
                     break;

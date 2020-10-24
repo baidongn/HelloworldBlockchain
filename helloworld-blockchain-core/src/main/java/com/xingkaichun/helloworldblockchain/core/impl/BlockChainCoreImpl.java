@@ -220,7 +220,7 @@ public class BlockChainCoreImpl extends BlockChainCore {
         transactionDTO.setTransactionOutputDtoList(transactionOutputDtoList);
 
         //校验校验手续费够不够，如果不够的话，继续补充交易手续费
-        Transaction transaction = NodeTransportDtoTool.classCast(blockChainDataBase,transactionDTO);
+        Transaction transaction = NodeTransportDtoTool.transactionDto2Transaction(blockChainDataBase,transactionDTO);
         if(TransactionTool.isTransactionFeeRight(transaction)){
 
         }

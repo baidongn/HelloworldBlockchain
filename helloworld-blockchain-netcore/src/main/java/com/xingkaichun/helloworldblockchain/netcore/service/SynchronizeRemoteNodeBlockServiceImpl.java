@@ -160,7 +160,7 @@ public class SynchronizeRemoteNodeBlockServiceImpl implements SynchronizeRemoteN
                 if(!ServiceResult.isSuccess(queryBlockHashByBlockHeightResponseServiceResult)){
                     break;
                 }
-                Block block = NodeTransportDtoTool.classCast(blockChainDataBase,blockDTO);
+                Block block = NodeTransportDtoTool.blockDto2Block(blockChainDataBase,blockDTO);
                 boolean isAddBlockSuccess = blockChainDataBase.addBlock(block);
                 if(!isAddBlockSuccess){
                     synchronizerDataBase.clear(nodeId);

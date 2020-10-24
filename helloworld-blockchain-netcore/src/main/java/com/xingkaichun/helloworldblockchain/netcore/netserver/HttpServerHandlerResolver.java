@@ -131,7 +131,7 @@ public class HttpServerHandlerResolver {
     public ServiceResult<QueryBlockDtoByBlockHeightResponse> queryBlockDtoByBlockHeight(QueryBlockDtoByBlockHeightRequest request){
         try {
             Block block = blockChainCore.queryBlockByBlockHeight(request.getBlockHeight());
-            BlockDTO blockDTO = NodeTransportDtoTool.classCast(block);
+            BlockDTO blockDTO = NodeTransportDtoTool.block2BlockDTO(block);
 
             QueryBlockDtoByBlockHeightResponse response = new QueryBlockDtoByBlockHeightResponse();
             response.setBlockDTO(blockDTO);
