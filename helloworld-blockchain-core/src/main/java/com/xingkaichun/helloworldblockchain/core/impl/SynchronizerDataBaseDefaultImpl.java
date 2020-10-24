@@ -1,7 +1,7 @@
 package com.xingkaichun.helloworldblockchain.core.impl;
 
 import com.xingkaichun.helloworldblockchain.core.SynchronizerDataBase;
-import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlockDTO;
+import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlock;
 import com.xingkaichun.helloworldblockchain.core.tools.NodeTransportDtoTool;
 import com.xingkaichun.helloworldblockchain.core.utils.FileUtil;
 import com.xingkaichun.helloworldblockchain.core.utils.JdbcUtil;
@@ -53,7 +53,7 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
     }
 
     @Override
-    public boolean addBlockDTO(String nodeId, SynchronizerBlockDTO synchronizerBlockDTO) {
+    public boolean addBlockDTO(String nodeId, SynchronizerBlock synchronizerBlock) {
 
         String sql = "INSERT INTO DATA (nodeId,blockHeight,blockDto,insertTime) " +
                 "VALUES (?,?,?,?);";
@@ -61,8 +61,8 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
         try {
             preparedStatement = connection().prepareStatement(sql);
             preparedStatement.setString(1,nodeId);
-            preparedStatement.setLong(2,synchronizerBlockDTO.getHeight());
-            preparedStatement.setString(3, NodeTransportDtoTool.encode(synchronizerBlockDTO));
+            preparedStatement.setLong(2, synchronizerBlock.getHeight());
+            preparedStatement.setString(3, NodeTransportDtoTool.encode(synchronizerBlock));
             preparedStatement.setLong(4,System.currentTimeMillis());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -118,7 +118,7 @@ public class SynchronizerDataBaseDefaultImpl extends SynchronizerDataBase {
     }
 
     @Override
-    public SynchronizerBlockDTO getBlockDto(String nodeId, long blockHeight) {
+    public SynchronizerBlock getBlockDto(String nodeId, long blockHeight) {
         String selectBlockDataSql = "SELECT * FROM DATA WHERE nodeId = ? and blockHeight=?";
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;

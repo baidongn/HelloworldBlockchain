@@ -8,7 +8,7 @@ import java.io.Serializable;
  *
  * @author 邢开春 微信HelloworldBlockchain 邮箱xingkaichun@qq.com
  */
-public class SynchronizerBlockDTO extends BlockDTO implements Serializable {
+public class SynchronizerBlock extends BlockDTO implements Serializable {
 
     //区块高度
     private long height;

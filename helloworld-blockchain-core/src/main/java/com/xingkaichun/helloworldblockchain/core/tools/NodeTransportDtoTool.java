@@ -5,7 +5,7 @@ import com.xingkaichun.helloworldblockchain.core.BlockChainDataBase;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptKey;
 import com.xingkaichun.helloworldblockchain.core.model.script.ScriptLock;
-import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlockDTO;
+import com.xingkaichun.helloworldblockchain.core.model.synchronizer.SynchronizerBlock;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.*;
 import com.xingkaichun.helloworldblockchain.core.script.StackBasedVirtualMachine;
 import com.xingkaichun.helloworldblockchain.core.utils.LongUtil;
@@ -28,7 +28,7 @@ public class NodeTransportDtoTool {
      * 类型转换
      * TODO 先填充不需要依赖blockchain的属性，然后填充依赖blockchain的属性
      */
-    public static Block classCast(BlockChainDataBase blockChainDataBase, SynchronizerBlockDTO blockDTO) {
+    public static Block classCast(BlockChainDataBase blockChainDataBase, SynchronizerBlock blockDTO) {
         if(LongUtil.isLessThan(blockDTO.getHeight(),LongUtil.ONE)){
             throw new ClassCastException("区块的高度不能少于1");
         }
@@ -259,16 +259,16 @@ public class NodeTransportDtoTool {
     }
 
     /**
-     * 编码 SynchronizerBlockDTO
+     * 编码 SynchronizerBlock
      */
-    public static String encode(SynchronizerBlockDTO synchronizerBlockDTO) {
-        return gson.toJson(synchronizerBlockDTO);
+    public static String encode(SynchronizerBlock synchronizerBlock) {
+        return gson.toJson(synchronizerBlock);
     }
 
     /**
-     * 解码 SynchronizerBlockDTO
+     * 解码 SynchronizerBlock
      */
-    public static SynchronizerBlockDTO decodeToSynchronizerBlockDTO(String stringSynchronizerBlockDTO) {
-        return gson.fromJson(stringSynchronizerBlockDTO,SynchronizerBlockDTO.class);
+    public static SynchronizerBlock decodeToSynchronizerBlockDTO(String stringSynchronizerBlockDTO) {
+        return gson.fromJson(stringSynchronizerBlockDTO, SynchronizerBlock.class);
     }
 }
