@@ -38,4 +38,31 @@ public class ScriptTool {
         }
         return bytesScript;
     }
+
+    /**
+     * 字节型脚本
+     */
+    public static String toString(List<String> script) {
+        String stringScript = "";
+        for(int i=0;i<script.size();i++){
+            String operationCode = script.get(i);
+            byte[] bytesOperationCode = HexUtil.hexStringToBytes(operationCode);
+            if(Arrays.equals(OperationCodeEnum.OP_DUP.getCode(),bytesOperationCode)){
+                stringScript = stringScript + OperationCodeEnum.OP_DUP.getName() + " ";
+            }else if(Arrays.equals(OperationCodeEnum.OP_HASH160.getCode(),bytesOperationCode)){
+                stringScript = stringScript + OperationCodeEnum.OP_HASH160.getName() + " ";
+            }else if(Arrays.equals(OperationCodeEnum.OP_EQUALVERIFY.getCode(),bytesOperationCode)){
+                stringScript = stringScript + OperationCodeEnum.OP_EQUALVERIFY.getName() + " ";
+            }else if(Arrays.equals(OperationCodeEnum.OP_CHECKSIG.getCode(),bytesOperationCode)){
+                stringScript = stringScript + OperationCodeEnum.OP_CHECKSIG.getName() + " ";
+            }else if(Arrays.equals(OperationCodeEnum.OP_PUSHDATA.getCode(),bytesOperationCode)){
+                String operationData = script.get(++i);
+                stringScript = stringScript + OperationCodeEnum.OP_PUSHDATA.getName() + " ";
+                stringScript = stringScript + operationData + " ";
+            }else {
+                throw new RuntimeException("不能识别的指令");
+            }
+        }
+        return stringScript;
+    }
 }

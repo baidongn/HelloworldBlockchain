@@ -202,4 +202,12 @@ public class BlockTool {
         }
         return false;
     }
+
+    /**
+     * 获取矿工奖励
+     * TODO 矿工手续费由矿工决定。而不应该是系统强制限制。
+     */
+    public static long getMinerIncentiveValue(Block block) {
+        return block.getTransactions().get(0).getOutputs().get(0).getValue();
+    }
 }

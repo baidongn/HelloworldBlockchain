@@ -2,6 +2,7 @@ package com.xingkaichun.helloworldblockchain.node.controller;
 
 import com.google.common.base.Strings;
 import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
+import com.xingkaichun.helloworldblockchain.core.tools.WalletTool;
 import com.xingkaichun.helloworldblockchain.crypto.AccountUtil;
 import com.xingkaichun.helloworldblockchain.crypto.model.Account;
 import com.xingkaichun.helloworldblockchain.netcore.NetBlockchainCore;
@@ -10,8 +11,27 @@ import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.Configurat
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationEnum;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.NodeDto;
 import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.AdminConsoleApiRoute;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.request.*;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.response.*;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.block.RemoveBlockRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.block.RemoveBlockResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.node.*;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.AddAccountRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.DeleteAccountRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.QueryAllAccountListRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.ActiveMinerRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.DeactiveMinerRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.IsMinerActiveRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.ActiveSynchronizerRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.DeactiveSynchronizerRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.IsSynchronizerActiveRequest;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.AddAccountResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.DeleteAccountResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.QueryAllAccountListResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.ActiveMinerResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.DeactiveMinerResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.IsMinerActiveResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.ActiveSynchronizerResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.DeactiveSynchronizerResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.IsSynchronizerActiveResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -380,11 +401,23 @@ public class AdminConsoleController {
     public ServiceResult<QueryAllAccountListResponse> queryAllAccountList(@RequestBody QueryAllAccountListRequest request){
         try {
             List<Account> allAccount = getBlockChainCore().getWallet().queryAllAccount();
+
+            List<QueryAllAccountListResponse.AccountDto> accountDtoList = new ArrayList<>();
+            if(allAccount != null){
+                for(Account account:allAccount){
+                    QueryAllAccountListResponse.AccountDto accountDto = new QueryAllAccountListResponse.AccountDto();
+                    accountDto.setAddress(account.getAddress());
+                    accountDto.setPrivateKey(account.getPrivateKey());
+                    accountDto.setValue(WalletTool.obtainBalance(getBlockChainCore(),account.getAddress()));
+                    accountDtoList.add(accountDto);
+                }
+            }
+
             QueryAllAccountListResponse response = new QueryAllAccountListResponse();
-            response.setAccountList(allAccount);
-            return ServiceResult.createSuccessServiceResult("删除区块成功",response);
+            response.setAccountDtoList(accountDtoList);
+            return ServiceResult.createSuccessServiceResult("[查询所有账户]成功",response);
         } catch (Exception e){
-            String message = "删除区块失败";
+            String message = "[查询所有账户]失败";
             logger.error(message,e);
             return ServiceResult.createFailServiceResult(message);
         }

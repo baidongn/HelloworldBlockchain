@@ -30,10 +30,12 @@ public class BlockChainDataBaseKeyTool {
     private static final String TRANSACTION_OUTPUT_HASH_TO_TRANSACTION_OUTPUT_PREFIX_FLAG = "I";
     //未花费的交易输出标识：存储未花费交易输出ID到未花费交易输出的映射
     private static final String UNSPEND_TRANSACTION_OUTPUT_ID_TO_UNSPEND_TRANSACTION_OUTPUT_PREFIX_FLAG = "J";
+    //花费的交易输出标识：存储已经花费交易输出ID到花费所在的交易哈希的映射
+    private static final String SPEND_TRANSACTION_OUTPUT_ID_TO_TRANSACTION_HASH_PREFIX_FLAG = "K";
     //地址标识：存储地址到交易输出的映射
-    private static final String ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG = "K";
+    private static final String ADDRESS_TO_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG = "L";
     //地址标识：存储地址到未花费交易输出的映射
-    private static final String ADDRESS_TO_UNSPEND_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG = "L";
+    private static final String ADDRESS_TO_UNSPEND_TRANSACTION_OUTPUT_LIST_KEY_PREFIX_FLAG = "M";
 
     //钱包地址截止标记
     private static final String ADDRESS_END_FLAG = "#" ;
@@ -69,6 +71,10 @@ public class BlockChainDataBaseKeyTool {
     }
     public static byte[] buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(TransactionOutputId transactionOutputId) {
         String stringKey = UNSPEND_TRANSACTION_OUTPUT_ID_TO_UNSPEND_TRANSACTION_OUTPUT_PREFIX_FLAG + transactionOutputId.getTransactionOutputId() + END_FLAG;
+        return LevelDBUtil.stringToBytes(stringKey);
+    }
+    public static byte[] buildSpendTransactionOutputIdToTransactionHashKey(TransactionOutputId transactionOutputId) {
+        String stringKey = SPEND_TRANSACTION_OUTPUT_ID_TO_TRANSACTION_HASH_PREFIX_FLAG + transactionOutputId.getTransactionOutputId() + END_FLAG;
         return LevelDBUtil.stringToBytes(stringKey);
     }
     public static byte[] buildAddressToTransactionOutputListKey(TransactionOutput transactionOutput) {

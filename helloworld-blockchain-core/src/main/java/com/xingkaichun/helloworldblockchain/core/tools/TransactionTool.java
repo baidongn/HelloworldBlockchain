@@ -281,7 +281,7 @@ public class TransactionTool {
      * 计算转账手续费
      */
     public static long calculateTransactionFee(long size) {
-        return size%GlobalSetting.TransactionConstant.TRANSACTION_FEE_PER_OUTPUT * size;
+        return GlobalSetting.TransactionConstant.TRANSACTION_FEE_PER_OUTPUT * size;
     }
 
     /**
@@ -302,5 +302,17 @@ public class TransactionTool {
         String json = new Gson().toJson(transactionOutput);
         UnspendTransactionOutput unspendTransactionOutput = new Gson().fromJson(json,UnspendTransactionOutput.class);
         return unspendTransactionOutput;
+    }
+
+    public static long getTransactionInputCount(Transaction transaction) {
+        List<TransactionInput> inputs = transaction.getInputs();
+        long transactionInputCount = inputs==null?0:inputs.size();
+        return transactionInputCount;
+    }
+
+    public static long getTransactionOutputCount(Transaction transaction) {
+        List<TransactionOutput> outputs = transaction.getOutputs();
+        long transactionOutputCount = outputs==null?0:outputs.size();
+        return transactionOutputCount;
     }
 }

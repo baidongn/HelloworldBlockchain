@@ -91,13 +91,20 @@ public abstract class BlockChainCore {
 
 
     /**
-     * 构建交易
+     * 构建交易。使用钱包里的账户。
      */
     public abstract TransactionDTO buildTransactionDTO(List<Recipient> recipientList) ;
+    /**
+     * 构建交易。使用提供的账户。
+     */
+    public abstract TransactionDTO buildTransactionDTO(List<String> privateKeyList,List<Recipient> recipientList) ;
     /**
      * 提交交易到区块链
      */
     public abstract void submitTransaction(TransactionDTO transactionDTO) ;
+
+
+
     /**
      * 查询挖矿中的交易
      */

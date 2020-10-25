@@ -280,6 +280,15 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
         }
         return LevelDBUtil.bytesToLong(bytesBlockHeight);
     }
+
+    @Override
+    public String queryTransactionHashBySpendTransactionOutputId(TransactionOutputId transactionOutputId) {
+        byte[] bytesTransactionHash = LevelDBUtil.get(blockChainDB, BlockChainDataBaseKeyTool.buildSpendTransactionOutputIdToTransactionHashKey(transactionOutputId));
+        if(bytesTransactionHash == null){
+            return null;
+        }
+        return EncodeDecodeUtil.decodeToTransactionHash(bytesTransactionHash);
+    }
     //endregion
 
 
@@ -488,6 +497,13 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                             writeBatch.delete(unspendTransactionOutputIdToUnspendTransactionOutputKey);
                         } else {
                             writeBatch.put(unspendTransactionOutputIdToUnspendTransactionOutputKey, EncodeDecodeUtil.encode(unspendTransactionOutput));
+                        }
+
+                        byte[] spendTransactionOutputIdToTransactionHashKey = BlockChainDataBaseKeyTool.buildSpendTransactionOutputIdToTransactionHashKey(unspendTransactionOutput);
+                        if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
+                            writeBatch.put(spendTransactionOutputIdToTransactionHashKey,EncodeDecodeUtil.encodeTransactionHash(transaction.getTransactionHash()));
+                        } else {
+                            writeBatch.delete(spendTransactionOutputIdToTransactionHashKey);
                         }
                     }
                 }

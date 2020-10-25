@@ -77,6 +77,10 @@ public abstract class BlockChainDataBase {
      * 根据区块哈希查找区块高度
      */
     public abstract long queryBlockHeightByBlockHash(String blockHash) ;
+    /**
+     * 根据已花费的交易输出ID查询花费去向所在的交易的哈希
+     */
+    public abstract String queryTransactionHashBySpendTransactionOutputId(TransactionOutputId transactionOutputId) ;
     //endregion
 
 

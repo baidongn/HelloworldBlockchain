@@ -139,17 +139,17 @@ public class BlockChainCoreImpl extends BlockChainCore {
 
 
     public TransactionDTO buildTransactionDTO(List<Recipient> recipientList) {
-        List<Account> accountList = wallet.queryAllAccount();
+        List<Account> allAccountList = wallet.queryAllAccount();
         List<String> privateKeyList = new ArrayList<>();
-        if(accountList != null){
-            for(Account account:accountList){
+        if(allAccountList != null){
+            for(Account account:allAccountList){
                 privateKeyList.add(account.getPrivateKey());
             }
         }
         return buildTransactionDTO(privateKeyList, recipientList);
     }
 
-    private TransactionDTO buildTransactionDTO(List<String> privateKeyList,List<Recipient> recipientList) {
+    public TransactionDTO buildTransactionDTO(List<String> privateKeyList,List<Recipient> recipientList) {
         //理应支付总金额
         long outputVaules = 0;
         if(recipientList != null){
@@ -181,7 +181,8 @@ public class BlockChainCoreImpl extends BlockChainCore {
         //序号
         for(String privateKey : privateKeyList){
             //TODO 优化 可能不止100
-            List<TransactionOutput> utxoList = blockChainDataBase.queryUnspendTransactionOutputListByAddress(privateKey,0,100);
+            String address = AccountUtil.accountFromPrivateKey(privateKey).getAddress();
+            List<TransactionOutput> utxoList = blockChainDataBase.queryUnspendTransactionOutputListByAddress(address,0,100);
             for(TransactionOutput transactionOutput:utxoList){
                 inputValues += transactionOutput.getValue();
                 //交易输入

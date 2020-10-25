@@ -1,0 +1,62 @@
+package com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account;
+
+import java.io.Serializable;
+import java.util.List;
+
+/**
+ * @author xingkaichun@ceair.com
+ */
+public class QueryAllAccountListResponse {
+
+
+    private List<AccountDto> accountDtoList;
+
+    public List<AccountDto> getAccountDtoList() {
+        return accountDtoList;
+    }
+
+    public void setAccountDtoList(List<AccountDto> accountDtoList) {
+        this.accountDtoList = accountDtoList;
+    }
+
+    public static class AccountDto implements Serializable {
+
+        private String privateKey;
+        private String address;
+        private long value;
+
+        public AccountDto(String privateKey, String address, long value) {
+            this.privateKey = privateKey;
+            this.address = address;
+            this.value = value;
+        }
+
+        public AccountDto() {
+        }
+
+        public String getPrivateKey() {
+            return privateKey;
+        }
+
+        public void setPrivateKey(String privateKey) {
+            this.privateKey = privateKey;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public long getValue() {
+            return value;
+        }
+
+        public void setValue(long value) {
+            this.value = value;
+        }
+    }
+
+}
