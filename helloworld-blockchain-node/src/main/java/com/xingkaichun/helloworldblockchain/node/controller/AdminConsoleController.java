@@ -412,9 +412,13 @@ public class AdminConsoleController {
                     accountDtoList.add(accountDto);
                 }
             }
-
+            long balance = 0;
+            for(QueryAllAccountListResponse.AccountDto accountDto:accountDtoList){
+                balance += accountDto.getValue();
+            }
             QueryAllAccountListResponse response = new QueryAllAccountListResponse();
             response.setAccountDtoList(accountDtoList);
+            response.setBalance(balance);
             return ServiceResult.createSuccessServiceResult("[查询所有账户]成功",response);
         } catch (Exception e){
             String message = "[查询所有账户]失败";

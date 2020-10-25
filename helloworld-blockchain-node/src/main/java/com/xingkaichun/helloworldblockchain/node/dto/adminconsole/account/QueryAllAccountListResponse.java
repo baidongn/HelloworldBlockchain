@@ -8,8 +8,17 @@ import java.util.List;
  */
 public class QueryAllAccountListResponse {
 
-
+    private long balance;
     private List<AccountDto> accountDtoList;
+
+
+    public long getBalance() {
+        return balance;
+    }
+
+    public void setBalance(long balance) {
+        this.balance = balance;
+    }
 
     public List<AccountDto> getAccountDtoList() {
         return accountDtoList;
