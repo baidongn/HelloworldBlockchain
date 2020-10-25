@@ -31,7 +31,7 @@ public class QueryBlockDtoByBlockHashResponse {
     public static class BlockDto {
         private long height;
         private long confirmCount;
-        private String blocksize;
+        private String blockSize;
         private long transactionCount;
         private String time;
         private long minerIncentiveValue;
@@ -61,12 +61,12 @@ public class QueryBlockDtoByBlockHashResponse {
             this.confirmCount = confirmCount;
         }
 
-        public String getBlocksize() {
-            return blocksize;
+        public String getBlockSize() {
+            return blockSize;
         }
 
-        public void setBlocksize(String blocksize) {
-            this.blocksize = blocksize;
+        public void setBlockSize(String blockSize) {
+            this.blockSize = blockSize;
         }
 
         public long getTransactionCount() {
@@ -155,12 +155,21 @@ public class QueryBlockDtoByBlockHashResponse {
     public static class TransactionDto {
         private String transactionHash;
         private long transactionFee;
+        private String time;
         private String transactionType;
         private long transactionInputValues;
         private long transactionOutputValues;
         private List<TransactionInputDto> transactionInputDtoList;
         private List<TransactionOutputDto> transactionOutputDtoList;
 
+
+        public String getTime() {
+            return time;
+        }
+
+        public void setTime(String time) {
+            this.time = time;
+        }
 
         public String getTransactionHash() {
             return transactionHash;

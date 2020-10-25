@@ -31,7 +31,7 @@ public class QueryLast10BlockDtoResponse {
     public static class BlockDto {
 
         private long height;
-        private String blocksize;
+        private String blockSize;
         private long transactionCount;
         private long minerIncentiveValue;
         private String time;
@@ -45,12 +45,12 @@ public class QueryLast10BlockDtoResponse {
             this.height = height;
         }
 
-        public String getBlocksize() {
-            return blocksize;
+        public String getBlockSize() {
+            return blockSize;
         }
 
-        public void setBlocksize(String blocksize) {
-            this.blocksize = blocksize;
+        public void setBlockSize(String blockSize) {
+            this.blockSize = blockSize;
         }
 
         public long getTransactionCount() {

@@ -387,7 +387,7 @@ public class BlockChainBrowserController {
             QueryBlockDtoByBlockHashResponse.BlockDto blockDto = new QueryBlockDtoByBlockHashResponse.BlockDto();
             blockDto.setHeight(block.getHeight());
             blockDto.setConfirmCount(BlockTool.getTransactionCount(block));
-            blockDto.setBlocksize("12K");//TODO
+            blockDto.setBlockSize("12K");//TODO
             blockDto.setTransactionCount(BlockTool.getTransactionCount(block));
             blockDto.setTime(DateUtil.timestamp2ChinaTime(block.getTimestamp()));
             blockDto.setMinerIncentiveValue(BlockTool.getMinerIncentiveValue(block));
@@ -407,6 +407,7 @@ public class BlockChainBrowserController {
                     QueryBlockDtoByBlockHashResponse.TransactionDto transactionDto = new QueryBlockDtoByBlockHashResponse.TransactionDto();
                     transactionDto.setTransactionFee(TransactionTool.calculateTransactionFee(transaction));
                     transactionDto.setTransactionHash(transaction.getTransactionHash());
+                    transactionDto.setTime(DateUtil.timestamp2ChinaTime(block.getTimestamp()));
                     transactionDto.setTransactionType(transaction.getTransactionType().name());
                     transactionDto.setTransactionInputValues(TransactionTool.getInputsValue(transaction));
                     transactionDto.setTransactionOutputValues(TransactionTool.getOutputsValue(transaction));
@@ -472,7 +473,7 @@ public class BlockChainBrowserController {
             for(Block block : blockList){
                 QueryLast10BlockDtoResponse.BlockDto blockDto = new QueryLast10BlockDtoResponse.BlockDto();
                 blockDto.setHeight(block.getHeight());
-                blockDto.setBlocksize("12K");//TODO
+                blockDto.setBlockSize("12K");//TODO
                 blockDto.setTransactionCount(BlockTool.getTransactionCount(block));
                 blockDto.setMinerIncentiveValue(BlockTool.getMinerIncentiveValue(block));
                 blockDto.setTime(DateUtil.timestamp2ChinaTime(block.getTimestamp()));

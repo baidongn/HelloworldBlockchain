@@ -28,9 +28,9 @@ public class QueryTransactionByTransactionHashResponse {
 
 
     public static class TransactionDto {
-        private String transactionHash;
         private long blockHeight;
         private long confirmCount;
+        private String transactionHash;
         private String blockTime;
 
         private long transactionFee;
