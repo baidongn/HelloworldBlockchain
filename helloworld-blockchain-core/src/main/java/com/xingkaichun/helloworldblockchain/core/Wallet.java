@@ -15,5 +15,5 @@ public abstract class Wallet {
 
     public abstract void addAccount(Account account);
 
-    public abstract void deleteAccount(Account account);
+    public abstract void deleteAccountByAddress(String address);
 }

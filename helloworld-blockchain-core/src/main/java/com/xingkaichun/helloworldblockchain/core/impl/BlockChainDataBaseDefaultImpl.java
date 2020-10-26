@@ -489,9 +489,9 @@ public class BlockChainDataBaseDefaultImpl extends BlockChainDataBase {
                 }
                 List<TransactionInput> inputs = transaction.getInputs();
                 if(inputs != null){
-                    for(TransactionInput txInput:inputs){
+                    for(TransactionInput transactionInput:inputs){
                         //存储未花费交易输出哈希到未花费交易输出的映射
-                        TransactionOutput unspendTransactionOutput = txInput.getUnspendTransactionOutput();
+                        TransactionOutput unspendTransactionOutput = transactionInput.getUnspendTransactionOutput();
                         byte[] unspendTransactionOutputIdToUnspendTransactionOutputKey = BlockChainDataBaseKeyTool.buildUnspendTransactionOutputIdToUnspendTransactionOutputKey(unspendTransactionOutput);
                         if(BlockChainActionEnum.ADD_BLOCK == blockChainActionEnum){
                             writeBatch.delete(unspendTransactionOutputIdToUnspendTransactionOutputKey);

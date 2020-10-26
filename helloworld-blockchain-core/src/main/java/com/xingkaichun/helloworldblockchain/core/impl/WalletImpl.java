@@ -117,12 +117,12 @@ public class WalletImpl extends Wallet {
     }
 
     @Override
-    public void deleteAccount(Account account) {
+    public void deleteAccountByAddress(String address) {
         String sql1 = "DELETE FROM wallet WHERE address = ?";
         PreparedStatement preparedStatement1 = null;
         try {
             preparedStatement1 = connection().prepareStatement(sql1);
-            preparedStatement1.setString(1,account.getAddress());
+            preparedStatement1.setString(1,address);
             preparedStatement1.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);

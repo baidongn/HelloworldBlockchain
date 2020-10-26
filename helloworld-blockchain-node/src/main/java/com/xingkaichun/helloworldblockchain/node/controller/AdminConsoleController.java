@@ -11,27 +11,12 @@ import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.Configurat
 import com.xingkaichun.helloworldblockchain.netcore.dto.configuration.ConfigurationEnum;
 import com.xingkaichun.helloworldblockchain.netcore.dto.netserver.NodeDto;
 import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.AdminConsoleApiRoute;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.*;
 import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.block.RemoveBlockRequest;
 import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.block.RemoveBlockResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.*;
 import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.node.*;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.AddAccountRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.DeleteAccountRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.QueryAllAccountListRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.ActiveMinerRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.DeactiveMinerRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.IsMinerActiveRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.ActiveSynchronizerRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.DeactiveSynchronizerRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.IsSynchronizerActiveRequest;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.AddAccountResponse;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.DeleteAccountResponse;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account.QueryAllAccountListResponse;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.ActiveMinerResponse;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.DeactiveMinerResponse;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.miner.IsMinerActiveResponse;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.ActiveSynchronizerResponse;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.DeactiveSynchronizerResponse;
-import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.IsSynchronizerActiveResponse;
+import com.xingkaichun.helloworldblockchain.node.dto.adminconsole.synchronizer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -329,28 +314,15 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.ADD_ACCOUNT,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<AddAccountResponse> addAccount(@RequestBody AddAccountRequest request){
         try {
-            Account account = request.getAccount();
-            if(account == null){
-                return ServiceResult.createFailServiceResult("账户不能为空。");
-            }
-            String privateKey = account.getPrivateKey();
+            String privateKey = request.getPrivateKey();
             if(Strings.isNullOrEmpty(privateKey)){
                 return ServiceResult.createFailServiceResult("账户私钥不能为空。");
             }
-            String publicKey = account.getPublicKey();
-            if(!Strings.isNullOrEmpty(publicKey)){
-                return ServiceResult.createFailServiceResult("账户公钥由私钥计算得出，不需要填写。");
-            }
-            String address = account.getAddress();
-            if(!Strings.isNullOrEmpty(address)){
-                return ServiceResult.createFailServiceResult("账户地址由私钥计算得出，不需要填写。");
-            }
-
-            Account accountTemp = AccountUtil.accountFromPrivateKey(privateKey);
-            getBlockChainCore().getWallet().addAccount(accountTemp);
+            Account account = AccountUtil.accountFromPrivateKey(privateKey);
+            getBlockChainCore().getWallet().addAccount(account);
             AddAccountResponse response = new AddAccountResponse();
             response.setAddAccountSuccess(true);
-            return ServiceResult.createSuccessServiceResult("删除区块成功",response);
+            return ServiceResult.createSuccessServiceResult("新增账户成功",response);
         } catch (Exception e){
             String message = "新增账户失败";
             logger.error(message,e);
@@ -362,33 +334,14 @@ public class AdminConsoleController {
     @RequestMapping(value = AdminConsoleApiRoute.DELETE_ACCOUNT,method={RequestMethod.GET,RequestMethod.POST})
     public ServiceResult<DeleteAccountResponse> deleteAccount(@RequestBody DeleteAccountRequest request){
         try {
+            String address = request.getAddress();
+            if(!Strings.isNullOrEmpty(address)){
+                return ServiceResult.createFailServiceResult("请填写需要删除的地址");
+            }
+            getBlockChainCore().getWallet().deleteAccountByAddress(address);
             DeleteAccountResponse response = new DeleteAccountResponse();
             response.setDeleteAccountSuccess(true);
-            ServiceResult<DeleteAccountResponse> responseServiceResult = ServiceResult.createSuccessServiceResult("删除账号成功",response);
-
-            Account account = request.getAccount();
-            if(account == null){
-                return ServiceResult.createFailServiceResult("账户不能为空。");
-            }
-            String address = account.getAddress();
-            if(!Strings.isNullOrEmpty(address)){
-                Account accountTemp = new Account(null,null,address);
-                getBlockChainCore().getWallet().deleteAccount(accountTemp);
-                return responseServiceResult;
-            }
-            String publicKey = account.getPublicKey();
-            if(!Strings.isNullOrEmpty(publicKey)){
-                Account accountTemp = new Account(null,null, AccountUtil.addressFromPublicKey(publicKey));
-                getBlockChainCore().getWallet().deleteAccount(accountTemp);
-                return responseServiceResult;
-            }
-            String privateKey = account.getPrivateKey();
-            if(!Strings.isNullOrEmpty(privateKey)){
-                Account accountTemp = new Account(null,null, AccountUtil.accountFromPrivateKey(privateKey).getAddress());
-                getBlockChainCore().getWallet().deleteAccount(accountTemp);
-                return responseServiceResult;
-            }
-            return ServiceResult.createFailServiceResult("请填写需要删除的地址");
+            return ServiceResult.createSuccessServiceResult("删除账号成功",response);
         } catch (Exception e){
             String message = "删除账号失败";
             logger.error(message,e);

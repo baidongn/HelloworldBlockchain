@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import com.xingkaichun.helloworldblockchain.core.BlockChainCore;
 import com.xingkaichun.helloworldblockchain.core.model.Block;
 import com.xingkaichun.helloworldblockchain.core.model.pay.Recipient;
-import com.xingkaichun.helloworldblockchain.core.model.script.ScriptLock;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.Transaction;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionInput;
 import com.xingkaichun.helloworldblockchain.core.model.transaction.TransactionOutput;
@@ -306,7 +305,43 @@ public class BlockChainBrowserController {
             return ServiceResult.createFailServiceResult(message);
         }
     }
+    /**
+     * 根据交易输出ID获取交易输出
+     */
+    @ResponseBody
+    @RequestMapping(value = BlockChainApiRoute.QUERY_TXO_BY_TRANSACTION_OUTPUT_ID,method={RequestMethod.GET,RequestMethod.POST})
+    public ServiceResult<QueryTxoByTransactionOutputIdResponse> queryTxoByTransactionOutputId(@RequestBody QueryTxoByTransactionOutputIdRequest request){
+        try {
+            TransactionOutputId transactionOutputId = request.getTransactionOutputId();
+            TransactionOutput transactionOutput = getBlockChainCore().getBlockChainDataBase().queryTransactionOutputByTransactionOutputId(transactionOutputId);
+            if(transactionOutput == null){
+                return ServiceResult.createFailServiceResult("没有查询到交易输出。");
+            }
+            QueryTxoByTransactionOutputIdResponse.TransactionOutputDto transactionOutputDto = new QueryTxoByTransactionOutputIdResponse.TransactionOutputDto();
+            transactionOutputDto.setBlockHeight(transactionOutput.getBlockHeight());
+            transactionOutputDto.setTransactionHash(transactionOutput.getTransactionHash());
+            transactionOutputDto.setValue(transactionOutput.getValue());
+            transactionOutputDto.setScriptLock(ScriptTool.toString(transactionOutput.getScriptLock()));
+            transactionOutputDto.setTransactionOutputIndex(transactionOutput.getTransactionOutputSequence());
+            transactionOutputId.setTransactionHash(transactionOutput.getTransactionHash());
+            transactionOutputId.setTransactionOutputSequence(transactionOutput.getTransactionOutputSequence());
+            TransactionOutput transactionOutputTemp = getBlockChainCore().getBlockChainDataBase().queryUnspendTransactionOutputByTransactionOutputId(transactionOutputId);
+            transactionOutputDto.setSpend(transactionOutputTemp==null);
+            if(transactionOutputTemp==null){
+                String transactionHash = getBlockChainCore().getBlockChainDataBase().queryTransactionHashBySpendTransactionOutputId(transactionOutputId);
+                transactionOutputDto.setDestinationTransactionHash(transactionHash);
+                //transactionOutputDto.setScriptKey(ScriptTool.toString(transactionInput.getScriptKey()));
+            }
 
+            QueryTxoByTransactionOutputIdResponse response = new QueryTxoByTransactionOutputIdResponse();
+            response.setTransactionOutputDto(transactionOutputDto);
+            return ServiceResult.createSuccessServiceResult("[查询交易输出]成功",response);
+        } catch (Exception e){
+            String message = "[查询交易输出]失败";
+            logger.error(message,e);
+            return ServiceResult.createFailServiceResult(message);
+        }
+    }
     /**
      * Ping节点
      */

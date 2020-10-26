@@ -1,20 +1,18 @@
 package com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account;
 
-import com.xingkaichun.helloworldblockchain.crypto.model.Account;
-
 /**
  * @author xingkaichun@ceair.com
  */
 public class DeleteAccountRequest {
 
 
-    private Account account;
+    private String address;
 
-    public Account getAccount() {
-        return account;
+    public String getAddress() {
+        return address;
     }
 
-    public void setAccount(Account account) {
-        this.account = account;
+    public void setAddress(String address) {
+        this.address = address;
     }
 }

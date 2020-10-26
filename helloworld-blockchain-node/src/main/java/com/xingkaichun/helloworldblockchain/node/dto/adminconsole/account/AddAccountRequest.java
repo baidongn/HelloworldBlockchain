@@ -1,20 +1,18 @@
 package com.xingkaichun.helloworldblockchain.node.dto.adminconsole.account;
 
-import com.xingkaichun.helloworldblockchain.crypto.model.Account;
-
 /**
  * @author xingkaichun@ceair.com
  */
 public class AddAccountRequest {
 
-    private Account account;
+    String privateKey;
 
 
-    public Account getAccount() {
-        return account;
+    public String getPrivateKey() {
+        return privateKey;
     }
 
-    public void setAccount(Account account) {
-        this.account = account;
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
     }
 }

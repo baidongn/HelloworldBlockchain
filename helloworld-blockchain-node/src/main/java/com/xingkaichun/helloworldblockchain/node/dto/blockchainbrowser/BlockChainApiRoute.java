@@ -13,6 +13,7 @@ public class BlockChainApiRoute {
     public static final String QUERY_MINING_TRANSACTION_BY_TRANSACTION_HASH = "/Api/BlockChain/QueryMiningTransactionByTransactionHash";
     public static final String QUERY_UTXOS_BY_ADDRESS = "/Api/BlockChain/QueryUtxosByAddress";
     public static final String QUERY_TXOS_BY_ADDRESS = "/Api/BlockChain/QueryTxosByAddress";
+    public static final String QUERY_TXO_BY_TRANSACTION_OUTPUT_ID = "/Api/BlockChain/QueryTxoByTransactionOutputId";
     public static final String PING = "/Api/BlockChain/Ping";
     public static final String QUERY_MINING_TRANSACTION_LIST = "/Api/BlockChain/QueryMiningTransactionList";
 
